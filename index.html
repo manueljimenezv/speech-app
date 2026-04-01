@@ -23,17 +23,15 @@ select{font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;b
 .mval{font-size:22px;font-weight:500;line-height:1;}
 .munit{font-size:11px;color:#888;}
 .bar-wrap{height:7px;background:#e0dfda;border-radius:4px;margin-top:7px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;transition:width .15s,background .3s;}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s,background .3s;}
 .status-pill{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;border-radius:20px;background:#f5f4f0;color:#666;border:1px solid #e0dfda;width:100%;justify-content:center;margin-bottom:.75rem;}
 .dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
 .dot.green{background:#1D9E75;animation:pulse 1s infinite;}
 .dot.red{background:#E24B4A;}
 .dot.yellow{background:#EF9F27;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-.vol-bar-big{height:18px;background:#e0dfda;border-radius:9px;overflow:hidden;margin-bottom:.9rem;}
-.vol-fill-big{height:100%;border-radius:9px;transition:width .1s,background .2s;background:#1D9E75;}
-.tx-box{min-height:150px;max-height:280px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2;}
-.interim{color:#aaa;font-style:italic;}
+.tx-box{min-height:160px;max-height:300px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2;}
+.interim{color:#999;font-style:italic;}
 .word-match{background:#C0DD97;color:#27500A;border-radius:3px;padding:1px 4px;}
 .word-miss{background:#F7C1C1;color:#791F1F;border-radius:3px;padding:1px 4px;}
 .word-partial{background:#FAC775;color:#633806;border-radius:3px;padding:1px 4px;}
@@ -53,7 +51,7 @@ textarea:focus{outline:none;border-color:#888;}
 </head>
 <body>
 <h1>Speech Analyzer</h1>
-<p class="sub">Transcription · Volume · Clarity · Reference compare</p>
+<p class="sub">Transcription · Clarity · Reference compare</p>
 <div class="alert" id="alertBox"></div>
 
 <div class="tab-row">
@@ -62,7 +60,6 @@ textarea:focus{outline:none;border-color:#888;}
   <button class="tab" onclick="switchTab('debug')">Debug</button>
 </div>
 
-<!-- TRANSCRIBE -->
 <div class="panel active" id="panel-main">
   <div class="card">
     <select id="langSel">
@@ -79,27 +76,22 @@ textarea:focus{outline:none;border-color:#888;}
     </select>
     <div class="status-pill"><span class="dot" id="dotEl"></span><span id="statusLbl">Tap Start</span></div>
     <button class="btn-big" id="recBtn" onclick="toggleRec()">&#9679;&nbsp; Start listening</button>
-    <button class="btn-sm" onclick="clearAll()">Clear transcript</button>
+    <button class="btn-sm" onclick="clearAll()">Clear</button>
   </div>
 
-  <!-- Volume shown as big bar — no AudioContext needed -->
-  <div class="card">
-    <div class="stitle">Volume <span id="volLabel" style="color:#888;font-weight:400;font-size:12px">(active when listening)</span></div>
-    <div class="vol-bar-big"><div id="volBig" style="width:0%"></div></div>
-    <div class="metrics-row" style="margin-bottom:0">
-      <div class="metric">
-        <div class="mlabel">Clarity</div>
-        <div><span class="mval" id="clarVal">—</span><span class="munit"> %</span></div>
-        <div class="bar-wrap"><div class="bar-fill" id="clarBar" style="width:0%;background:#378ADD"></div></div>
-      </div>
-      <div class="metric">
-        <div class="mlabel">Words</div>
-        <div class="mval" id="wordCnt">0</div>
-      </div>
-      <div class="metric">
-        <div class="mlabel">Sessions</div>
-        <div class="mval" id="sessCnt">0</div>
-      </div>
+  <div class="metrics-row">
+    <div class="metric">
+      <div class="mlabel">Clarity</div>
+      <div><span class="mval" id="clarVal">—</span><span class="munit"> %</span></div>
+      <div class="bar-wrap"><div class="bar-fill" id="clarBar" style="width:0%;background:#378ADD"></div></div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Words</div>
+      <div class="mval" id="wordCnt">0</div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Restarts</div>
+      <div class="mval" id="sessCnt">0</div>
     </div>
   </div>
 
@@ -110,7 +102,6 @@ textarea:focus{outline:none;border-color:#888;}
   </div>
 </div>
 
-<!-- COMPARE -->
 <div class="panel" id="panel-compare">
   <div class="card">
     <div class="stitle">Reference text</div>
@@ -132,7 +123,6 @@ textarea:focus{outline:none;border-color:#888;}
   </div>
 </div>
 
-<!-- DEBUG -->
 <div class="panel" id="panel-debug">
   <div class="card">
     <div class="stitle">Debug log</div>
@@ -142,7 +132,6 @@ textarea:focus{outline:none;border-color:#888;}
 </div>
 
 <script>
-// ── Log ──────────────────────────────────────────────────────────────────
 const log = (...a) => {
   const b = document.getElementById('debugBox');
   b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';
@@ -150,7 +139,6 @@ const log = (...a) => {
 };
 function showAlert(m){ const a=document.getElementById('alertBox'); a.textContent=m; a.style.display='block'; }
 
-// ── Diagnostics ──────────────────────────────────────────────────────────
 (function(){
   log('UA: '+navigator.userAgent.slice(-80));
   log('Protocol: '+location.protocol+' Host: '+location.host);
@@ -158,113 +146,71 @@ function showAlert(m){ const a=document.getElementById('alertBox'); a.textConten
   log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND ✗'));
   if(!SR) showAlert('Speech Recognition not available. Use Google Chrome.');
   navigator.permissions&&navigator.permissions.query({name:'microphone'})
-    .then(r=>{ log('Mic permission: '+r.state); if(r.state==='denied') showAlert('Mic blocked — go to Chrome site settings and allow microphone.'); })
+    .then(r=>log('Mic permission: '+r.state))
     .catch(()=>log('Mic permission: n/a'));
   log('Init done.');
 })();
 
-// ── State ────────────────────────────────────────────────────────────────
 const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
 let rec=null, isRec=false;
 let txFinal='', clarScores=[], wordList=[], sessCount=0;
-let restartTimer=null, volTimer=null;
-// NOTE: No AudioContext — it conflicts with SpeechRecognition on Android Chrome.
-// Volume is estimated from the speech recognition audio events instead.
+let restartTimer=null;
 
-// ── Tab ──────────────────────────────────────────────────────────────────
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','compare','debug'][i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
 }
-
-// ── Status ───────────────────────────────────────────────────────────────
 function setStatus(state,msg){
   document.getElementById('dotEl').className='dot'+(state==='on'?' green':state==='err'?' red':state==='wait'?' yellow':'');
   document.getElementById('statusLbl').textContent=msg;
 }
 
-// ── Volume simulation via mic stream ─────────────────────────────────────
-// We get the mic stream ONLY for volume measurement using a separate
-// AudioContext that does NOT share the stream with SpeechRecognition.
-// The key fix: SpeechRecognition gets its OWN implicit mic access,
-// we don't pass our micStream to it at all.
-let volAudioCtx=null, volAnalyser=null, volStream=null, volAnimId=null;
-
-async function startVolumeMeter(){
-  try{
-    volStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-    volAudioCtx = new(window.AudioContext||window.webkitAudioContext)();
-    volAnalyser = volAudioCtx.createAnalyser();
-    volAnalyser.fftSize = 256;
-    volAudioCtx.createMediaStreamSource(volStream).connect(volAnalyser);
-    log('Volume meter started ✓');
-    volLoop();
-  } catch(e){ log('Volume meter err: '+e.message); }
-}
-
-function stopVolumeMeter(){
-  if(volAnimId){ cancelAnimationFrame(volAnimId); volAnimId=null; }
-  clearTimeout(volTimer);
-  if(volStream){ volStream.getTracks().forEach(t=>t.stop()); volStream=null; }
-  if(volAudioCtx){ volAudioCtx.close(); volAudioCtx=null; volAnalyser=null; }
-  document.getElementById('volBig').style.width='0%';
-  document.getElementById('volBig').style.background='#1D9E75';
-}
-
-function volLoop(){
-  if(!volAnalyser||!isRec) return;
-  const buf=new Uint8Array(volAnalyser.frequencyBinCount);
-  volAnalyser.getByteFrequencyData(buf);
-  const avg=buf.reduce((a,b)=>a+b,0)/buf.length;
-  const pct=Math.round(Math.max(0,Math.min(100,(avg/255)*100)));
-  const bar=document.getElementById('volBig');
-  bar.style.width=pct+'%';
-  bar.style.background=pct>65?'#E24B4A':pct>30?'#EF9F27':'#1D9E75';
-  volTimer=setTimeout(volLoop,80);
-}
-
-// ── Build SpeechRecognition ───────────────────────────────────────────────
 function buildRec(){
   if(!SR) return null;
   const r=new SR();
-  r.continuous=false;       // Android Chrome works best with false + manual restart
-  r.interimResults=true;
-  r.maxAlternatives=1;
-  r.lang=document.getElementById('langSel').value;
+  // Android Chrome: continuous=false is required.
+  // interimResults=true shows text while speaking.
+  // Do NOT open any other getUserMedia stream — SR manages mic exclusively.
+  r.continuous = false;
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+  r.lang = document.getElementById('langSel').value;
 
-  r.onstart=()=>{ log('onstart ✓'); setStatus('on','Listening...'); };
-  r.onaudiostart=()=>log('onaudiostart ✓');
-  r.onsoundstart=()=>log('onsoundstart ✓ — sound!');
-  r.onspeechstart=()=>{ log('onspeechstart ✓ — speech!'); setStatus('on','Hearing speech...'); };
-  r.onspeechend=()=>log('onspeechend');
-  r.onaudioend=()=>log('onaudioend');
+  r.onstart      = () => { log('onstart ✓'); setStatus('on','Listening...'); };
+  r.onaudiostart = () => log('onaudiostart ✓');
+  r.onsoundstart = () => { log('onsoundstart ✓ — sound detected!'); setStatus('on','Sound detected...'); };
+  r.onspeechstart= () => { log('onspeechstart ✓ — SPEECH!'); setStatus('on','Transcribing...'); };
+  r.onspeechend  = () => log('onspeechend');
+  r.onaudioend   = () => log('onaudioend');
 
-  r.onerror=(e)=>{
+  r.onerror = (e) => {
     log('onerror: '+e.error+(e.message?' — '+e.message:''));
-    if(e.error==='not-allowed'){ showAlert('Mic blocked. Tap the lock icon in Chrome address bar → Microphone → Allow.'); stopRec(); return; }
-    if(e.error==='network'){ log('Network error — needs internet for Google Speech servers'); setStatus('err','Network error'); return; }
+    if(e.error==='not-allowed'){ showAlert('Mic blocked. Tap the lock icon in Chrome → Microphone → Allow.'); stopRec(); return; }
+    if(e.error==='network'){ setStatus('err','Network error'); return; }
     if(e.error==='no-speech'||e.error==='aborted'){ scheduleRestart(); return; }
-    setStatus('err',e.error);
+    setStatus('err', e.error);
   };
 
-  r.onresult=(e)=>{
-    log('onresult ✓ — '+e.results.length+' result(s)');
+  r.onresult = (e) => {
+    log('onresult ✓ '+e.results.length+' result(s)');
     let fin='', itr='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
+    for(let i=e.resultIndex; i<e.results.length; i++){
       const res=e.results[i], txt=res[0].transcript, conf=res[0].confidence;
       log((res.isFinal?'FINAL':'interim')+': "'+txt.trim()+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
       if(res.isFinal){
-        fin+=txt;
-        txt.trim().split(/\s+/).filter(Boolean).forEach(w=>wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')}));
+        fin += txt;
+        txt.trim().split(/\s+/).filter(Boolean).forEach(w=>
+          wordList.push({raw:w, word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
+        );
         if(conf>0){ clarScores.push(conf); updateClarity(conf); }
-      } else { itr+=txt; }
+      } else { itr += txt; }
     }
-    if(fin) txFinal+=(txFinal?' ':'')+fin.trim();
+    if(fin) txFinal += (txFinal?' ':'')+fin.trim();
     renderTx(itr); updateWordCount(); runCompare();
   };
 
-  r.onend=()=>{
+  r.onend = () => {
     log('onend — isRec='+isRec);
     if(isRec) scheduleRestart();
     else setStatus('','Stopped');
@@ -276,62 +222,65 @@ function scheduleRestart(){
   if(!isRec) return;
   setStatus('wait','Restarting...');
   clearTimeout(restartTimer);
-  restartTimer=setTimeout(()=>{
+  restartTimer = setTimeout(()=>{
     if(!isRec) return;
     try{
-      rec=buildRec();
+      rec = buildRec();
       rec.start();
       sessCount++;
-      document.getElementById('sessCnt').textContent=sessCount;
-      log('Restarted (session #'+sessCount+')');
-    } catch(e){ log('Restart failed: '+e.message); setStatus('err','Restart failed'); }
-  }, 250);
+      document.getElementById('sessCnt').textContent = sessCount;
+      log('Restarted session #'+sessCount);
+    } catch(e){ log('Restart err: '+e.message); setStatus('err','Restart failed'); }
+  }, 300);
 }
 
-// ── Toggle ───────────────────────────────────────────────────────────────
 async function toggleRec(){ if(isRec) stopRec(); else await startRec(); }
 
 async function startRec(){
   log('=== START ===');
   if(!SR){ showAlert('SpeechRecognition not available. Use Chrome.'); return; }
 
-  // Start volume meter (separate stream, does NOT interfere with SR)
-  await startVolumeMeter();
+  // IMPORTANT: Do NOT call getUserMedia here.
+  // SpeechRecognition on Android Chrome manages its own mic access.
+  // Opening a second stream (even for volume) prevents SR from getting audio.
 
-  isRec=true;
-  sessCount=1;
-  document.getElementById('sessCnt').textContent=sessCount;
-
-  // SpeechRecognition uses its OWN mic access internally — do NOT pass a stream
-  rec=buildRec();
+  isRec = true;
+  sessCount = 1;
+  document.getElementById('sessCnt').textContent = sessCount;
+  rec = buildRec();
   if(!rec){ isRec=false; return; }
-  try{ rec.start(); log('rec.start() called'); }
-  catch(e){ log('rec.start() err: '+e.message); isRec=false; stopVolumeMeter(); return; }
-
-  const btn=document.getElementById('recBtn');
-  btn.textContent='⬛  Stop listening'; btn.classList.add('on');
+  try{
+    rec.start();
+    log('rec.start() called');
+  } catch(e){
+    log('rec.start() err: '+e.message);
+    isRec = false; return;
+  }
+  const btn = document.getElementById('recBtn');
+  btn.textContent = '⬛  Stop listening';
+  btn.classList.add('on');
 }
 
 function stopRec(){
   log('=== STOP ===');
-  isRec=false;
+  isRec = false;
   clearTimeout(restartTimer);
   if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
-  stopVolumeMeter();
-  const btn=document.getElementById('recBtn');
-  btn.textContent='● Start listening'; btn.classList.remove('on');
+  const btn = document.getElementById('recBtn');
+  btn.textContent = '● Start listening';
+  btn.classList.remove('on');
   setStatus('','Stopped');
 }
 
-// ── Render ───────────────────────────────────────────────────────────────
 function renderTx(interim){
   const box=document.getElementById('txBox'), ref=document.getElementById('refInput').value.trim();
   if(!txFinal&&!interim){ box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>'; return; }
-  let html=ref?colorize(txFinal,ref):esc(txFinal);
-  if(interim) html+=' <span class="interim">'+esc(interim)+'</span>';
-  box.innerHTML=html; box.scrollTop=box.scrollHeight;
-  const avg=clarScores.length?clarScores.reduce((a,b)=>a+b,0)/clarScores.length:0;
-  document.getElementById('txBadges').innerHTML=avg>0
+  let html = ref ? colorize(txFinal,ref) : esc(txFinal);
+  if(interim) html += ' <span class="interim">'+esc(interim)+'</span>';
+  box.innerHTML = html;
+  box.scrollTop = box.scrollHeight;
+  const avg = clarScores.length ? clarScores.reduce((a,b)=>a+b,0)/clarScores.length : 0;
+  document.getElementById('txBadges').innerHTML = avg>0
     ?`<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span><span class="badge bi">${wordList.length} words</span>`:'';
 }
 
@@ -362,23 +311,19 @@ function runCompare(){
 
 function updateClarity(c){ const p=Math.round(c*100); document.getElementById('clarVal').textContent=p; document.getElementById('clarBar').style.width=p+'%'; document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A'; }
 function updateWordCount(){ document.getElementById('wordCnt').textContent=wordList.length; }
-
 function clearAll(){
-  txFinal=''; clarScores=[]; wordList=[];
-  renderTx(''); updateWordCount();
+  txFinal=''; clarScores=[]; wordList=[]; renderTx(''); updateWordCount();
   document.getElementById('clarVal').textContent='—';
   document.getElementById('clarBar').style.width='0%';
   document.getElementById('cmpCard').style.display='none';
   log('Cleared.');
 }
-
 function loadTxt(e){
   const f=e.target.files[0]; if(!f) return;
   const fr=new FileReader();
   fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); log('File: '+f.name); };
   fr.readAsText(f);
 }
-
 document.getElementById('refInput').addEventListener('input',()=>{ renderTx(''); runCompare(); });
 function norm(s){ return s.toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim(); }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
