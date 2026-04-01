@@ -1,54 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>Speech Analyzer</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:system-ui,sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem;}
-h1{font-size:20px;font-weight:500;margin-bottom:3px;}
-.sub{font-size:13px;color:#666;margin-bottom:1.25rem;}
-.card{background:#fff;border:1px solid #e0dfda;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:.9rem;}
-.stitle{font-size:13px;font-weight:500;margin-bottom:9px;}
-.debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:200px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;}
-.btn-big{font-size:16px;padding:14px 0;border-radius:10px;border:2px solid #1D9E75;background:#1D9E75;color:#fff;cursor:pointer;font-weight:500;width:100%;margin-bottom:8px;-webkit-tap-highlight-color:transparent;}
-.btn-big:active{background:#0F6E56;}
-.btn-big.on{background:#E24B4A;border-color:#E24B4A;}
-.btn-sm{font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;}
-select{font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a18;width:100%;margin-bottom:.75rem;}
-.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.9rem;}
-.metric{background:#f5f4f0;border-radius:8px;padding:.65rem .8rem;}
-.mlabel{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:5px;}
-.mval{font-size:22px;font-weight:500;line-height:1;}
-.munit{font-size:11px;color:#888;}
-.bar-wrap{height:7px;background:#e0dfda;border-radius:4px;margin-top:7px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;transition:width .1s,background .3s;}
-.status-pill{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;border-radius:20px;background:#f5f4f0;color:#666;border:1px solid #e0dfda;width:100%;justify-content:center;margin-bottom:.75rem;}
-.dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
-.dot.green{background:#1D9E75;animation:pulse 1s infinite;}
-.dot.red{background:#E24B4A;}
-.dot.yellow{background:#EF9F27;animation:pulse 1s infinite;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem}
+h1{font-size:20px;font-weight:600;margin-bottom:3px}
+.sub{font-size:13px;color:#666;margin-bottom:1.25rem}
+.card{background:#fff;border:1px solid #e0dfda;border-radius:12px;padding:.95rem 1.1rem;margin-bottom:.9rem}
+.stitle{font-size:13px;font-weight:600;margin-bottom:9px}
+.debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:240px;overflow-y:auto;line-height:1.6;white-space:pre-wrap}
+.btn-big{font-size:16px;padding:14px 0;border-radius:10px;border:2px solid #1D9E75;background:#1D9E75;color:#fff;cursor:pointer;font-weight:600;width:100%;margin-bottom:8px;-webkit-tap-highlight-color:transparent}
+.btn-big:active{background:#0F6E56}
+.btn-big.on{background:#E24B4A;border-color:#E24B4A}
+.btn-sm{font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer}
+.btn-sm.primary{border-color:#378ADD;color:#0C447C}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+input[type="text"],input[type="password"],select,textarea{
+  width:100%;font-size:14px;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a18
+}
+textarea{min-height:100px;resize:vertical;line-height:1.6;font-family:system-ui,sans-serif}
+textarea:focus,input:focus,select:focus{outline:none;border-color:#888}
+label{display:block;font-size:12px;color:#666;margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.9rem}
+.metric{background:#f5f4f0;border-radius:8px;padding:.65rem .8rem}
+.mlabel{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:5px}
+.mval{font-size:22px;font-weight:600;line-height:1}
+.munit{font-size:11px;color:#888}
+.bar-wrap{height:7px;background:#e0dfda;border-radius:4px;margin-top:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .1s,background .3s}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;border-radius:20px;background:#f5f4f0;color:#666;border:1px solid #e0dfda;width:100%;justify-content:center;margin-bottom:.75rem}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
+.dot.green{background:#1D9E75;animation:pulse 1s infinite}
+.dot.red{background:#E24B4A}
+.dot.yellow{background:#EF9F27;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-.canvas-wrap{height:56px;background:#f5f4f0;border-radius:8px;overflow:hidden;margin-bottom:.9rem;}
-canvas{width:100%;height:100%;display:block;}
-.tx-box{min-height:160px;max-height:300px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2;}
-.interim{color:#999;font-style:italic;}
-.word-match{background:#C0DD97;color:#27500A;border-radius:3px;padding:1px 4px;}
-.word-miss{background:#F7C1C1;color:#791F1F;border-radius:3px;padding:1px 4px;}
-.word-partial{background:#FAC775;color:#633806;border-radius:3px;padding:1px 4px;}
-.badge{font-size:12px;padding:4px 10px;border-radius:6px;display:inline-block;margin:2px;}
-.bg{background:#C0DD97;color:#27500A;}.bw{background:#FAC775;color:#633806;}.bb{background:#F7C1C1;color:#791F1F;}.bi{background:#B5D4F4;color:#0C447C;}
-.tab-row{display:flex;border-bottom:1px solid #e0dfda;margin-bottom:.9rem;}
-.tab{font-size:13px;padding:8px 14px 11px;cursor:pointer;color:#888;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;-webkit-tap-highlight-color:transparent;}
-.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:500;}
-.panel{display:none;}.panel.active{display:block;}
-textarea{width:100%;min-height:100px;resize:vertical;font-size:14px;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;font-family:system-ui,sans-serif;line-height:1.6;}
-textarea:focus{outline:none;border-color:#888;}
-.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
-.legend-item{font-size:11px;display:flex;align-items:center;gap:4px;}
-.swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
-.alert{background:#FFF3CD;border:1px solid #FAC775;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#633806;margin-bottom:.9rem;display:none;}
+.canvas-wrap{height:56px;background:#f5f4f0;border-radius:8px;overflow:hidden;margin-bottom:.9rem}
+canvas{width:100%;height:100%;display:block}
+.tx-box{min-height:160px;max-height:300px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2}
+.word-match{background:#C0DD97;color:#27500A;border-radius:3px;padding:1px 4px}
+.word-miss{background:#F7C1C1;color:#791F1F;border-radius:3px;padding:1px 4px}
+.word-partial{background:#FAC775;color:#633806;border-radius:3px;padding:1px 4px}
+.badge{font-size:12px;padding:4px 10px;border-radius:6px;display:inline-block;margin:2px}
+.bg{background:#C0DD97;color:#27500A}.bw{background:#FAC775;color:#633806}.bb{background:#F7C1C1;color:#791F1F}.bi{background:#B5D4F4;color:#0C447C}
+.tab-row{display:flex;border-bottom:1px solid #e0dfda;margin-bottom:.9rem;overflow:auto}
+.tab{font-size:13px;padding:8px 14px 11px;cursor:pointer;color:#888;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:600}
+.panel{display:none}.panel.active{display:block}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.legend-item{font-size:11px;display:flex;align-items:center;gap:4px}
+.swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+.alert{background:#FFF3CD;border:1px solid #FAC775;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#633806;margin-bottom:.9rem;display:none}
+.muted{font-size:12px;color:#777;line-height:1.5}
+.small{font-size:12px;color:#666}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f5f4f0;border:1px solid #e0dfda;border-radius:6px;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -59,26 +67,28 @@ textarea:focus{outline:none;border-color:#888;}
 <div class="tab-row">
   <button class="tab active" onclick="switchTab('main')">Transcribe</button>
   <button class="tab" onclick="switchTab('compare')">Reference</button>
+  <button class="tab" onclick="switchTab('settings')">STT Settings</button>
   <button class="tab" onclick="switchTab('debug')">Debug</button>
 </div>
 
 <div class="panel active" id="panel-main">
   <div class="card">
     <select id="langSel">
-      <option value="en-US">English (US)</option>
-      <option value="en-GB">English (UK)</option>
-      <option value="es-ES">Spanish (ES)</option>
-      <option value="es-MX">Spanish (MX)</option>
-      <option value="fr-FR">French</option>
-      <option value="de-DE">German</option>
-      <option value="pt-BR">Portuguese (BR)</option>
-      <option value="it-IT">Italian</option>
-      <option value="ja-JP">Japanese</option>
-      <option value="zh-CN">Chinese</option>
+      <option value="en">English</option>
+      <option value="es">Spanish</option>
+      <option value="fr">French</option>
+      <option value="de">German</option>
+      <option value="pt">Portuguese</option>
+      <option value="it">Italian</option>
+      <option value="ja">Japanese</option>
+      <option value="zh">Chinese</option>
     </select>
     <div class="status-pill"><span class="dot" id="dotEl"></span><span id="statusLbl">Tap Start</span></div>
     <button class="btn-big" id="recBtn" onclick="toggleRec()">&#9679;&nbsp; Start listening</button>
-    <button class="btn-sm" onclick="clearAll()">Clear</button>
+    <div class="btn-row">
+      <button class="btn-sm" onclick="clearAll()">Clear</button>
+      <button class="btn-sm primary" onclick="testEndpoint()">Test STT endpoint</button>
+    </div>
   </div>
 
   <div class="canvas-wrap" id="waveWrap" style="display:none"><canvas id="waveCanvas"></canvas></div>
@@ -128,42 +138,64 @@ textarea:focus{outline:none;border-color:#888;}
   </div>
 </div>
 
+<div class="panel" id="panel-settings">
+  <div class="card">
+    <div class="stitle">STT endpoint configuration</div>
+    <div class="grid2">
+      <div>
+        <label for="endpointUrl">Endpoint URL</label>
+        <input type="text" id="endpointUrl" placeholder="http://localhost:8000/transcribe">
+      </div>
+      <div>
+        <label for="chunkMs">Chunk size (ms)</label>
+        <input type="text" id="chunkMs" value="4000">
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <label for="apiKey">Optional bearer token / API key</label>
+      <input type="password" id="apiKey" placeholder="Leave blank if not required">
+    </div>
+    <div style="margin-top:10px;">
+      <label for="extraPrompt">Optional prompt</label>
+      <textarea id="extraPrompt" placeholder="Example: Medical environment. Prefer English technical terms."></textarea>
+    </div>
+    <p class="muted" style="margin-top:10px;">
+      This Option B version uses <span class="code">getUserMedia</span> for a single live mic stream, measures dB from that same stream, and sends recorded chunks to your STT backend.
+      Without a backend endpoint, live dB will work but transcription will not. This avoids the browser mic conflict from the original approach.
+    </p>
+  </div>
+</div>
+
 <div class="panel" id="panel-debug">
   <div class="card">
     <div class="stitle">Debug log</div>
     <div class="debug-box" id="debugBox"></div>
-    <button class="btn-sm" onclick="document.getElementById('debugBox').textContent=''" style="margin-top:8px;">Clear log</button>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn-sm" onclick="document.getElementById('debugBox').textContent=''">Clear log</button>
+      <button class="btn-sm" onclick="downloadTranscript()">Download transcript</button>
+    </div>
   </div>
 </div>
 
 <script>
 const log = (...a) => {
   const b = document.getElementById('debugBox');
-  b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';
+  b.textContent += '[' + new Date().toLocaleTimeString() + '] ' + a.join(' ') + '\\n';
   b.scrollTop = b.scrollHeight;
 };
-function showAlert(m){ const a=document.getElementById('alertBox'); a.textContent=m; a.style.display='block'; }
 
-(function(){
-  log('UA: '+navigator.userAgent.slice(-80));
-  log('Protocol: '+location.protocol+' Host: '+location.host);
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND ✗'));
-  if(!SR) showAlert('Speech Recognition not available. Use Google Chrome.');
-  navigator.permissions&&navigator.permissions.query({name:'microphone'})
-    .then(r=>log('Mic permission: '+r.state))
-    .catch(()=>log('Mic permission: n/a'));
-  log('Init done.');
-})();
-
-const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null, isRec=false;
-let txFinal='', clarScores=[], wordList=[], sessCount=0;
-let restartTimer=null;
-let volCtx=null, volAnalyser=null, volStream=null, volAnimId=null, volTimer=null, volDelayTimer=null;
-
+function showAlert(m){
+  const a=document.getElementById('alertBox');
+  a.textContent=m;
+  a.style.display='block';
+}
+function hideAlert(){
+  const a=document.getElementById('alertBox');
+  a.textContent='';
+  a.style.display='none';
+}
 function switchTab(id){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','compare','debug'][i]===id));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','compare','settings','debug'][i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
 }
@@ -171,218 +203,496 @@ function setStatus(state,msg){
   document.getElementById('dotEl').className='dot'+(state==='on'?' green':state==='err'?' red':state==='wait'?' yellow':'');
   document.getElementById('statusLbl').textContent=msg;
 }
-
-// ── SpeechRecognition ────────────────────────────────────────────────────
-function buildRec(){
-  if(!SR) return null;
-  const r=new SR();
-  r.continuous=false;
-  r.interimResults=true;
-  r.maxAlternatives=1;
-  r.lang=document.getElementById('langSel').value;
-  r.onstart      =()=>{ log('onstart ✓'); setStatus('on','Listening...'); };
-  r.onaudiostart =()=>log('onaudiostart ✓');
-  r.onsoundstart =()=>{ log('onsoundstart ✓'); setStatus('on','Sound detected...'); };
-  r.onspeechstart=()=>{ log('onspeechstart ✓ SPEECH'); setStatus('on','Transcribing...'); };
-  r.onspeechend  =()=>log('onspeechend');
-  r.onaudioend   =()=>log('onaudioend');
-  r.onerror=(e)=>{
-    log('onerror: '+e.error+(e.message?' — '+e.message:''));
-    if(e.error==='not-allowed'){ showAlert('Mic blocked. Tap the lock icon in Chrome → Microphone → Allow.'); stopRec(); return; }
-    if(e.error==='network'){ setStatus('err','Network error'); return; }
-    if(e.error==='no-speech'||e.error==='aborted'){ scheduleRestart(); return; }
-    setStatus('err',e.error);
-  };
-  r.onresult=(e)=>{
-    log('onresult ✓ '+e.results.length+' result(s)');
-    let fin='', itr='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const res=e.results[i], txt=res[0].transcript, conf=res[0].confidence;
-      log((res.isFinal?'FINAL':'interim')+': "'+txt.trim()+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
-      if(res.isFinal){
-        fin+=txt;
-        txt.trim().split(/\s+/).filter(Boolean).forEach(w=>
-          wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
-        );
-        if(conf>0){ clarScores.push(conf); updateClarity(conf); }
-      } else { itr+=txt; }
-    }
-    if(fin) txFinal+=(txFinal?' ':'')+fin.trim();
-    renderTx(itr); updateWordCount(); runCompare();
-  };
-  r.onend=()=>{
-    log('onend — isRec='+isRec);
-    if(isRec) scheduleRestart();
-    else setStatus('','Stopped');
-  };
-  return r;
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function norm(s){
+  return String(s).toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim();
+}
+function normalizeWord(s){
+  return String(s).toLowerCase().replace(/[^\wáéíóúüñ]/gi,'');
 }
 
-function scheduleRestart(){
-  if(!isRec) return;
-  setStatus('wait','Restarting...');
-  clearTimeout(restartTimer);
-  restartTimer=setTimeout(()=>{
-    if(!isRec) return;
-    try{
-      rec=buildRec(); rec.start();
-      sessCount++;
-      document.getElementById('sessCnt') && (document.getElementById('sessCnt').textContent=sessCount);
-      log('Restarted #'+sessCount);
-    } catch(e){ log('Restart err: '+e.message); setStatus('err','Restart failed'); }
-  },300);
+(function init(){
+  log('UA: ' + navigator.userAgent.slice(-100));
+  log('Protocol: ' + location.protocol + ' Host: ' + location.host);
+  log('MediaRecorder: ' + (window.MediaRecorder ? 'AVAILABLE ✓' : 'NOT FOUND ✗'));
+  log('getUserMedia: ' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'AVAILABLE ✓' : 'NOT FOUND ✗'));
+  document.getElementById('endpointUrl').value = localStorage.getItem('stt_endpoint_url') || 'http://localhost:8000/transcribe';
+  document.getElementById('apiKey').value = localStorage.getItem('stt_api_key') || '';
+  document.getElementById('chunkMs').value = localStorage.getItem('stt_chunk_ms') || '4000';
+  document.getElementById('extraPrompt').value = localStorage.getItem('stt_extra_prompt') || '';
+  navigator.permissions && navigator.permissions.query({name:'microphone'})
+    .then(r=>log('Mic permission: ' + r.state))
+    .catch(()=>log('Mic permission: n/a'));
+})();
+
+let isRec = false;
+let manualStopping = false;
+
+let micStream = null;
+let audioCtx = null;
+let analyser = null;
+let dataArray = null;
+let waveAnimId = null;
+let volTimer = null;
+
+let mediaRecorder = null;
+let chunkSeq = 0;
+let sendingCount = 0;
+let mediaMimeType = '';
+
+let txFinal = '';
+let clarScores = [];
+let wordList = [];
+let partialText = '';
+
+function saveSettings(){
+  localStorage.setItem('stt_endpoint_url', document.getElementById('endpointUrl').value.trim());
+  localStorage.setItem('stt_api_key', document.getElementById('apiKey').value.trim());
+  localStorage.setItem('stt_chunk_ms', document.getElementById('chunkMs').value.trim());
+  localStorage.setItem('stt_extra_prompt', document.getElementById('extraPrompt').value);
 }
 
-// ── Volume meter ─────────────────────────────────────────────────────────
-// Starts 200ms after SR — just enough for SR to claim the mic first.
-// Uses a separate getUserMedia stream; does not share with SR.
-function startVolMeter(){
-  clearTimeout(volDelayTimer);
-  volDelayTimer = setTimeout(async ()=>{
-    if(!isRec) return;
-    try{
-      volStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-      volCtx = new(window.AudioContext||window.webkitAudioContext)();
-      volAnalyser = volCtx.createAnalyser();
-      volAnalyser.fftSize = 512;
-      volCtx.createMediaStreamSource(volStream).connect(volAnalyser);
-      document.getElementById('waveWrap').style.display='block';
-      drawWave(); volLoop();
-      log('Volume meter ✓');
-    } catch(e){ log('Volume meter err: '+e.message); }
-  }, 200);
+function preferredMimeType(){
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    ''
+  ];
+  for(const t of candidates){
+    if(!t) return '';
+    if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return '';
 }
 
-function stopVolMeter(){
-  clearTimeout(volDelayTimer);
-  if(volAnimId){ cancelAnimationFrame(volAnimId); volAnimId=null; }
-  clearTimeout(volTimer);
-  if(volStream){ volStream.getTracks().forEach(t=>t.stop()); volStream=null; }
-  if(volCtx){ volCtx.close(); volCtx=null; volAnalyser=null; }
-  document.getElementById('waveWrap').style.display='none';
-  document.getElementById('volVal').textContent='—';
-  document.getElementById('volBar').style.width='0%';
+async function ensureMic(){
+  if(micStream) return micStream;
+  hideAlert();
+
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1
+    },
+    video: false
+  });
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.82;
+  dataArray = new Uint8Array(analyser.fftSize);
+
+  const source = audioCtx.createMediaStreamSource(micStream);
+  source.connect(analyser);
+
+  document.getElementById('waveWrap').style.display = 'block';
+  drawWave();
+  volLoop();
+
+  log('Mic stream ready ✓');
+  return micStream;
 }
 
-function volLoop(){
-  if(!volAnalyser||!isRec) return;
-  const buf=new Uint8Array(volAnalyser.frequencyBinCount);
-  volAnalyser.getByteFrequencyData(buf);
-  const avg=buf.reduce((a,b)=>a+b,0)/buf.length;
-  const db=avg>1 ? Math.round(20*Math.log10(avg/255)) : -60;
-  const pct=Math.round(Math.max(0,Math.min(100,(avg/255)*100)));
-  document.getElementById('volVal').textContent=db;
-  document.getElementById('volBar').style.width=pct+'%';
-  document.getElementById('volBar').style.background=pct>65?'#E24B4A':pct>30?'#EF9F27':'#1D9E75';
-  volTimer=setTimeout(volLoop,100);
+function cleanupMic(){
+  if(waveAnimId){ cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+  if(volTimer){ clearTimeout(volTimer); volTimer = null; }
+  if(micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream = null; }
+  if(audioCtx){ audioCtx.close().catch(()=>{}); audioCtx = null; }
+  analyser = null;
+  dataArray = null;
+  document.getElementById('waveWrap').style.display = 'none';
+  document.getElementById('volVal').textContent = '—';
+  document.getElementById('volBar').style.width = '0%';
 }
 
 function drawWave(){
-  const cv=document.getElementById('waveCanvas');
-  cv.width=cv.offsetWidth||400; cv.height=cv.offsetHeight||56;
-  const ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  const cv = document.getElementById('waveCanvas');
+  cv.width = cv.offsetWidth || 400;
+  cv.height = cv.offsetHeight || 56;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
   function frame(){
-    if(!volAnalyser){ return; }
-    volAnimId=requestAnimationFrame(frame);
-    const buf=new Uint8Array(volAnalyser.fftSize);
-    volAnalyser.getByteTimeDomainData(buf);
+    if(!analyser || !dataArray || !isRec) return;
+    waveAnimId = requestAnimationFrame(frame);
+
+    analyser.getByteTimeDomainData(dataArray);
     ctx.clearRect(0,0,W,H);
-    ctx.strokeStyle='#378ADD'; ctx.lineWidth=1.5; ctx.beginPath();
-    const step=W/buf.length; let x=0;
-    for(let i=0;i<buf.length;i++){
-      const y=((buf[i]/128)-1)*(H/2)+(H/2);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=step;
+    ctx.strokeStyle = '#378ADD';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    const step = W / dataArray.length;
+    let x = 0;
+    for(let i=0;i<dataArray.length;i++){
+      const y = ((dataArray[i]/128)-1)*(H/2)+(H/2);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      x += step;
     }
     ctx.stroke();
   }
   frame();
 }
 
-// ── Start / Stop ─────────────────────────────────────────────────────────
-async function toggleRec(){ if(isRec) stopRec(); else await startRec(); }
+function volLoop(){
+  if(!analyser || !dataArray || !isRec) return;
+
+  analyser.getByteTimeDomainData(dataArray);
+  let sumSquares = 0;
+  for(let i=0;i<dataArray.length;i++){
+    const normalized = (dataArray[i] - 128) / 128;
+    sumSquares += normalized * normalized;
+  }
+  const rms = Math.sqrt(sumSquares / dataArray.length);
+  const db = rms > 0.0001 ? Math.max(-60, Math.round(20 * Math.log10(rms))) : -60;
+  const pct = Math.max(0, Math.min(100, Math.round(((db + 60) / 60) * 100)));
+
+  document.getElementById('volVal').textContent = db;
+  document.getElementById('volBar').style.width = pct + '%';
+  document.getElementById('volBar').style.background = pct > 70 ? '#E24B4A' : pct > 40 ? '#EF9F27' : '#1D9E75';
+
+  volTimer = setTimeout(volLoop, 100);
+}
+
+function updateClarityFromText(text){
+  const t = (text || '').trim();
+  if(!t) return;
+  const words = t.split(/\s+/).filter(Boolean).length;
+  const unique = new Set(t.toLowerCase().split(/\s+/).filter(Boolean)).size;
+  const letters = (t.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g) || []).length;
+  let score = 45;
+  if(words >= 3) score += 15;
+  if(unique >= Math.min(words, 4)) score += 10;
+  if(/[.,!?]/.test(t)) score += 5;
+  if(letters >= 12) score += 10;
+  if(words >= 8) score += 5;
+  score = Math.max(0, Math.min(99, score));
+  clarScores.push(score / 100);
+  updateClarityAvg();
+}
+
+function updateClarityAvg(){
+  if(!clarScores.length){
+    document.getElementById('clarVal').textContent = '—';
+    document.getElementById('clarBar').style.width = '0%';
+    return;
+  }
+  const avg = clarScores.reduce((a,b)=>a+b,0) / clarScores.length;
+  const p = Math.round(avg * 100);
+  document.getElementById('clarVal').textContent = p;
+  document.getElementById('clarBar').style.width = p + '%';
+  document.getElementById('clarBar').style.background = p > 75 ? '#1D9E75' : p > 50 ? '#EF9F27' : '#E24B4A';
+}
+
+function updateWordCount(){
+  document.getElementById('wordCnt').textContent = wordList.length;
+}
+
+function renderTx(){
+  const box = document.getElementById('txBox');
+  const ref = document.getElementById('refInput').value.trim();
+
+  if(!txFinal && !partialText){
+    box.innerHTML = '<span style="color:#aaa;font-size:14px">Tap Start, then speak clearly...</span>';
+    return;
+  }
+
+  let html = ref ? colorize(txFinal, ref) : esc(txFinal);
+  if(partialText){
+    html += (html ? ' ' : '') + '<span style="color:#999;font-style:italic;">' + esc(partialText) + '</span>';
+  }
+  box.innerHTML = html;
+  box.scrollTop = box.scrollHeight;
+
+  const avg = clarScores.length ? clarScores.reduce((a,b)=>a+b,0)/clarScores.length : 0;
+  document.getElementById('txBadges').innerHTML = avg > 0
+    ? '<span class="badge ' + (avg>.75?'bg':avg>.5?'bw':'bb') + '">Avg clarity ' + Math.round(avg*100) + '%</span><span class="badge bi">' + wordList.length + ' words</span>'
+    : '';
+}
+
+function colorize(spoken, ref){
+  const rw = norm(ref).split(/\s+/).filter(Boolean);
+  return spoken.trim().split(/\s+/).filter(Boolean).map(w => {
+    const c = norm(w);
+    if(rw.includes(c)) return '<span class="word-match">' + esc(w) + '</span>';
+    if(rw.some(r => r.length > 3 && (r.startsWith(c.slice(0,3)) || c.startsWith(r.slice(0,3))))) return '<span class="word-partial">' + esc(w) + '</span>';
+    return '<span class="word-miss">' + esc(w) + '</span>';
+  }).join(' ');
+}
+
+function runCompare(){
+  const ref = document.getElementById('refInput').value.trim();
+  if(!ref || !txFinal){
+    document.getElementById('cmpCard').style.display='none';
+    return;
+  }
+  document.getElementById('cmpCard').style.display='block';
+
+  const rw = norm(ref).split(/\s+/).filter(Boolean);
+  const sw = norm(txFinal).split(/\s+/).filter(Boolean);
+
+  document.getElementById('cmpBox').innerHTML = rw.map(w => {
+    if(sw.includes(w)) return '<span class="word-match">' + esc(w) + '</span>';
+    if(sw.some(s => s.length > 3 && (s.startsWith(w.slice(0,3)) || w.startsWith(s.slice(0,3))))) return '<span class="word-partial">' + esc(w) + '</span>';
+    return '<span class="word-miss">' + esc(w) + '</span>';
+  }).join(' ');
+
+  const matched = rw.filter(w => sw.includes(w)).length;
+  const pct = rw.length ? Math.round((matched / rw.length) * 100) : 0;
+  document.getElementById('cmpBadges').innerHTML =
+    '<span class="badge ' + (pct>=80?'bg':pct>=50?'bw':'bb') + '">Match ' + pct + '%</span>' +
+    '<span class="badge bi">' + matched + '/' + rw.length + ' matched</span>' +
+    '<span class="badge bb">' + (rw.length - matched) + ' missing</span>';
+}
+
+function appendFinalText(text){
+  const clean = (text || '').trim();
+  if(!clean) return;
+
+  txFinal += (txFinal ? ' ' : '') + clean;
+  partialText = '';
+  clean.split(/\s+/).filter(Boolean).forEach(w => {
+    wordList.push({ raw:w, word:normalizeWord(w) });
+  });
+  updateWordCount();
+  updateClarityFromText(clean);
+  renderTx();
+  runCompare();
+}
+
+async function sendChunk(blob, seq){
+  const endpoint = document.getElementById('endpointUrl').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const prompt = document.getElementById('extraPrompt').value.trim();
+  const lang = document.getElementById('langSel').value;
+
+  if(!endpoint){
+    partialText = 'No STT endpoint configured.';
+    renderTx();
+    log('Chunk #' + seq + ' skipped: missing endpoint');
+    return;
+  }
+
+  sendingCount++;
+  setStatus('wait', 'Transcribing… (' + sendingCount + ')');
+
+  try{
+    const form = new FormData();
+    const ext = mediaMimeType.includes('ogg') ? 'ogg' : mediaMimeType.includes('mp4') ? 'mp4' : 'webm';
+    form.append('file', blob, 'chunk-' + seq + '.' + ext);
+    form.append('sequence', String(seq));
+    form.append('language', lang);
+    form.append('prompt', prompt);
+
+    log('Sending chunk #' + seq + ' size=' + blob.size + ' mime=' + blob.type);
+
+    const headers = {};
+    if(apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: form
+    });
+
+    const text = await res.text();
+    let payload = {};
+    try{ payload = text ? JSON.parse(text) : {}; }catch{ payload = { text }; }
+
+    if(!res.ok){
+      throw new Error('HTTP ' + res.status + ' ' + (payload.error || text || 'transcription failed'));
+    }
+
+    const transcript = (payload.text || payload.transcript || '').trim();
+    partialText = '';
+    if(transcript){
+      appendFinalText(transcript);
+      log('Chunk #' + seq + ' transcript: "' + transcript + '"');
+    } else {
+      log('Chunk #' + seq + ' returned empty transcript');
+    }
+  }catch(err){
+    partialText = 'Transcription error: ' + err.message;
+    renderTx();
+    log('Chunk #' + seq + ' error: ' + err.message);
+    setStatus('err', 'STT error');
+  }finally{
+    sendingCount = Math.max(0, sendingCount - 1);
+    if(isRec){
+      setStatus('on', sendingCount ? 'Listening… / transcribing…' : 'Listening...');
+    } else {
+      setStatus('', 'Stopped');
+    }
+  }
+}
+
+function startRecorder(){
+  if(!micStream) throw new Error('Mic stream missing');
+
+  const ms = Math.max(1500, parseInt(document.getElementById('chunkMs').value || '4000', 10) || 4000);
+  mediaMimeType = preferredMimeType();
+
+  const options = mediaMimeType ? { mimeType: mediaMimeType } : undefined;
+  mediaRecorder = new MediaRecorder(micStream, options);
+  chunkSeq = 0;
+
+  mediaRecorder.onstart = () => log('MediaRecorder start ✓ mime=' + (mediaRecorder.mimeType || mediaMimeType || 'default'));
+  mediaRecorder.onerror = (e) => log('MediaRecorder error: ' + (e.error?.message || e.message || 'unknown'));
+  mediaRecorder.ondataavailable = async (e) => {
+    if(!e.data || !e.data.size) return;
+    chunkSeq++;
+    const seq = chunkSeq;
+    partialText = 'Processing chunk ' + seq + '…';
+    renderTx();
+    await sendChunk(e.data, seq);
+  };
+  mediaRecorder.onstop = () => log('MediaRecorder stop');
+
+  mediaRecorder.start(ms);
+  log('Recorder chunk size ms=' + ms);
+}
+
+async function toggleRec(){
+  if(isRec) stopRec();
+  else await startRec();
+}
 
 async function startRec(){
   log('=== START ===');
-  if(!SR){ showAlert('SpeechRecognition not available.'); return; }
-  isRec=true; sessCount=1;
+  saveSettings();
 
-  // Step 1: SpeechRecognition starts FIRST — owns the mic
-  rec=buildRec();
-  if(!rec){ isRec=false; return; }
-  try{ rec.start(); log('rec.start() called'); }
-  catch(e){ log('rec.start() err: '+e.message); isRec=false; return; }
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    showAlert('getUserMedia not available in this browser.');
+    return;
+  }
+  if(!window.MediaRecorder){
+    showAlert('MediaRecorder not available in this browser.');
+    return;
+  }
 
-  const btn=document.getElementById('recBtn');
-  btn.textContent='⬛  Stop listening'; btn.classList.add('on');
+  try{
+    isRec = true;
+    manualStopping = false;
+    setStatus('wait','Opening mic...');
+    await ensureMic();
+    startRecorder();
 
-  // Step 2: Volume meter starts 200ms later on its own stream
-  startVolMeter();
+    const btn = document.getElementById('recBtn');
+    btn.textContent = '⬛  Stop listening';
+    btn.classList.add('on');
+
+    setStatus('on','Listening...');
+  }catch(err){
+    isRec = false;
+    setStatus('err','Mic failed');
+    showAlert('Could not start microphone: ' + err.message);
+    log('Start error: ' + err.message);
+    cleanupMic();
+  }
 }
 
 function stopRec(){
   log('=== STOP ===');
-  isRec=false;
-  clearTimeout(restartTimer);
-  if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
-  stopVolMeter();
-  const btn=document.getElementById('recBtn');
-  btn.textContent='● Start listening'; btn.classList.remove('on');
-  setStatus('','Stopped');
+  manualStopping = true;
+  isRec = false;
+
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    try{ mediaRecorder.stop(); }catch{}
+  }
+  mediaRecorder = null;
+  cleanupMic();
+
+  const btn = document.getElementById('recBtn');
+  btn.textContent = '● Start listening';
+  btn.classList.remove('on');
+
+  setStatus('', 'Stopped');
 }
 
-// ── Render ───────────────────────────────────────────────────────────────
-function renderTx(interim){
-  const box=document.getElementById('txBox'), ref=document.getElementById('refInput').value.trim();
-  if(!txFinal&&!interim){ box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>'; return; }
-  let html=ref?colorize(txFinal,ref):esc(txFinal);
-  if(interim) html+=' <span class="interim">'+esc(interim)+'</span>';
-  box.innerHTML=html; box.scrollTop=box.scrollHeight;
-  const avg=clarScores.length?clarScores.reduce((a,b)=>a+b,0)/clarScores.length:0;
-  document.getElementById('txBadges').innerHTML=avg>0
-    ?`<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span><span class="badge bi">${wordList.length} words</span>`:'';
-}
-function colorize(spoken,ref){
-  const rw=norm(ref).split(/\s+/).filter(Boolean);
-  return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{
-    const c=norm(w);
-    if(rw.includes(c)) return`<span class="word-match">${esc(w)}</span>`;
-    if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
-    return`<span class="word-miss">${esc(w)}</span>`;
-  }).join(' ');
-}
-function runCompare(){
-  const ref=document.getElementById('refInput').value.trim();
-  if(!ref||!txFinal){ document.getElementById('cmpCard').style.display='none'; return; }
-  document.getElementById('cmpCard').style.display='block';
-  const rw=norm(ref).split(/\s+/).filter(Boolean), sw=norm(txFinal).split(/\s+/).filter(Boolean);
-  document.getElementById('cmpBox').innerHTML=rw.map(w=>{
-    if(sw.includes(w)) return`<span class="word-match">${esc(w)}</span>`;
-    if(sw.some(s=>s.length>3&&(s.startsWith(w.slice(0,3))||w.startsWith(s.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
-    return`<span class="word-miss">${esc(w)}</span>`;
-  }).join(' ');
-  const matched=rw.filter(w=>sw.includes(w)).length, pct=Math.round(matched/rw.length*100);
-  document.getElementById('cmpBadges').innerHTML=
-    `<span class="badge ${pct>=80?'bg':pct>=50?'bw':'bb'}">Match ${pct}%</span><span class="badge bi">${matched}/${rw.length} matched</span><span class="badge bb">${rw.length-matched} missing</span>`;
-}
-function updateClarity(c){ const p=Math.round(c*100); document.getElementById('clarVal').textContent=p; document.getElementById('clarBar').style.width=p+'%'; document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A'; }
-function updateWordCount(){ document.getElementById('wordCnt').textContent=wordList.length; }
 function clearAll(){
-  txFinal=''; clarScores=[]; wordList=[];
-  renderTx(''); updateWordCount();
-  document.getElementById('clarVal').textContent='—';
-  document.getElementById('clarBar').style.width='0%';
+  txFinal = '';
+  partialText = '';
+  clarScores = [];
+  wordList = [];
+  renderTx();
+  updateWordCount();
+  updateClarityAvg();
   document.getElementById('cmpCard').style.display='none';
   log('Cleared.');
 }
+
 function loadTxt(e){
-  const f=e.target.files[0]; if(!f) return;
-  const fr=new FileReader();
-  fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); log('File: '+f.name); };
+  const f = e.target.files[0];
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    document.getElementById('refInput').value = ev.target.result.trim();
+    renderTx();
+    runCompare();
+    log('File loaded: ' + f.name);
+  };
   fr.readAsText(f);
 }
-document.getElementById('refInput').addEventListener('input',()=>{ renderTx(''); runCompare(); });
-function norm(s){ return s.toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim(); }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function testEndpoint(){
+  saveSettings();
+  const endpoint = document.getElementById('endpointUrl').value.trim();
+  if(!endpoint){
+    showAlert('Enter an endpoint URL first.');
+    switchTab('settings');
+    return;
+  }
+
+  log('Testing endpoint: ' + endpoint);
+  setStatus('wait','Testing endpoint...');
+  try{
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const headers = {};
+    if(apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+    const res = await fetch(endpoint, { method: 'OPTIONS', headers });
+    log('Endpoint OPTIONS status: ' + res.status);
+    setStatus('', 'Ready');
+    showAlert('Endpoint reachable. OPTIONS status: ' + res.status);
+  }catch(err){
+    setStatus('err','Endpoint test failed');
+    showAlert('Endpoint test failed: ' + err.message);
+    log('Endpoint test failed: ' + err.message);
+  }
+}
+
+function downloadTranscript(){
+  const text = txFinal || '';
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transcript.txt';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('refInput').addEventListener('input', () => {
+  renderTx();
+  runCompare();
+});
+document.getElementById('langSel').addEventListener('change', () => {
+  saveSettings();
+  log('Language changed to ' + document.getElementById('langSel').value);
+});
+document.getElementById('endpointUrl').addEventListener('input', saveSettings);
+document.getElementById('apiKey').addEventListener('input', saveSettings);
+document.getElementById('chunkMs').addEventListener('input', saveSettings);
+document.getElementById('extraPrompt').addEventListener('input', saveSettings);
 </script>
 </body>
 </html>
