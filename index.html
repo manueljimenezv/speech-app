@@ -11,7 +11,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:3px;}
 .sub{font-size:13px;color:#666;margin-bottom:1.25rem;}
 .card{background:#fff;border:1px solid #e0dfda;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:.9rem;}
 .stitle{font-size:13px;font-weight:500;margin-bottom:9px;}
-.debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:220px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;}
+.debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:200px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;}
 .btn-big{font-size:16px;padding:14px 0;border-radius:10px;border:2px solid #1D9E75;background:#1D9E75;color:#fff;cursor:pointer;font-weight:500;width:100%;margin-bottom:8px;-webkit-tap-highlight-color:transparent;}
 .btn-big:active{background:#0F6E56;}
 .btn-big.on{background:#E24B4A;border-color:#E24B4A;}
@@ -49,7 +49,6 @@ textarea:focus{outline:none;border-color:#888;}
 .legend-item{font-size:11px;display:flex;align-items:center;gap:4px;}
 .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
 .alert{background:#FFF3CD;border:1px solid #FAC775;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#633806;margin-bottom:.9rem;display:none;}
-.small{font-size:12px;color:#666;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -106,11 +105,6 @@ textarea:focus{outline:none;border-color:#888;}
     <div class="tx-box" id="txBox"><span style="color:#aaa;font-size:14px">Tap Start, then speak clearly...</span></div>
     <div style="margin-top:10px;" id="txBadges"></div>
   </div>
-
-  <div class="card">
-    <div class="stitle">Mode notes</div>
-    <div class="small" id="modeNote">Hybrid mode active.</div>
-  </div>
 </div>
 
 <div class="panel" id="panel-compare">
@@ -145,59 +139,28 @@ textarea:focus{outline:none;border-color:#888;}
 <script>
 const log = (...a) => {
   const b = document.getElementById('debugBox');
-  b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\\n';
+  b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';
   b.scrollTop = b.scrollHeight;
 };
-function showAlert(m){
-  const a=document.getElementById('alertBox');
-  a.textContent=m;
-  a.style.display='block';
-}
-function hideAlert(){
-  const a=document.getElementById('alertBox');
-  a.textContent='';
-  a.style.display='none';
-}
-
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-let rec = null, isRec = false;
-let txFinal = '', clarScores = [], wordList = [], sessCount = 0;
-let restartTimer = null, restartInFlight = false;
-let volCtx = null, volAnalyser = null, volStream = null, volAnimId = null, volTimer = null, volDelayTimer = null;
-let txInterim = '';
-let manualStop = false;
-
-const ua = navigator.userAgent || '';
-const IS_ANDROID = /Android/i.test(ua);
-const IS_IOS = /iPhone|iPad|iPod/i.test(ua);
-const IS_APPLE_CHROME = /CriOS/i.test(ua);
-const ENABLE_VOLUME_METER = !IS_ANDROID; // disable second mic stream on Android
-const RESTART_DELAY_MS = IS_ANDROID ? 1200 : 800;
-const MODE_NOTE = ENABLE_VOLUME_METER
-  ? 'Volume meter enabled. On Android it is disabled automatically to protect transcript stability.'
-  : 'Android mode: volume meter is disabled automatically so transcript remains stable.';
+function showAlert(m){ const a=document.getElementById('alertBox'); a.textContent=m; a.style.display='block'; }
 
 (function(){
-  log('UA: '+navigator.userAgent.slice(-100));
+  log('UA: '+navigator.userAgent.slice(-80));
   log('Protocol: '+location.protocol+' Host: '+location.host);
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND ✗'));
-  log('IS_ANDROID='+IS_ANDROID+' IS_IOS='+IS_IOS+' IS_APPLE_CHROME='+IS_APPLE_CHROME);
-  log('ENABLE_VOLUME_METER='+ENABLE_VOLUME_METER+' RESTART_DELAY_MS='+RESTART_DELAY_MS);
-  document.getElementById('modeNote').textContent = MODE_NOTE;
-
-  if(!SR) showAlert('Speech Recognition not available in this browser.');
-  if(!ENABLE_VOLUME_METER){
-    document.getElementById('waveWrap').style.display='none';
-    document.getElementById('volVal').textContent='OFF';
-    document.getElementById('volBar').style.width='0%';
-  }
-
-  navigator.permissions && navigator.permissions.query({name:'microphone'})
+  if(!SR) showAlert('Speech Recognition not available. Use Google Chrome.');
+  navigator.permissions&&navigator.permissions.query({name:'microphone'})
     .then(r=>log('Mic permission: '+r.state))
     .catch(()=>log('Mic permission: n/a'));
   log('Init done.');
 })();
+
+const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, isRec=false;
+let txFinal='', clarScores=[], wordList=[], sessCount=0;
+let restartTimer=null;
+let volCtx=null, volAnalyser=null, volStream=null, volAnimId=null, volTimer=null, volDelayTimer=null;
 
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','compare','debug'][i]===id));
@@ -209,373 +172,217 @@ function setStatus(state,msg){
   document.getElementById('statusLbl').textContent=msg;
 }
 
+// ── SpeechRecognition ────────────────────────────────────────────────────
 function buildRec(){
   if(!SR) return null;
-  const r = new SR();
-  r.continuous = true;
-  r.interimResults = true;
-  r.maxAlternatives = 1;
-  r.lang = document.getElementById('langSel').value;
-
-  r.onstart = () => {
-    restartInFlight = false;
-    log('onstart ✓');
-    setStatus('on','Listening...');
-  };
-  r.onaudiostart = () => log('onaudiostart ✓');
-  r.onsoundstart = () => {
-    log('onsoundstart ✓');
-    setStatus('on','Sound detected...');
-  };
-  r.onspeechstart = () => {
-    log('onspeechstart ✓ SPEECH');
-    setStatus('on','Transcribing...');
-  };
-  r.onspeechend = () => log('onspeechend');
-  r.onaudioend = () => log('onaudioend');
-
-  r.onerror = (e) => {
+  const r=new SR();
+  r.continuous=false;
+  r.interimResults=true;
+  r.maxAlternatives=1;
+  r.lang=document.getElementById('langSel').value;
+  r.onstart      =()=>{ log('onstart ✓'); setStatus('on','Listening...'); };
+  r.onaudiostart =()=>log('onaudiostart ✓');
+  r.onsoundstart =()=>{ log('onsoundstart ✓'); setStatus('on','Sound detected...'); };
+  r.onspeechstart=()=>{ log('onspeechstart ✓ SPEECH'); setStatus('on','Transcribing...'); };
+  r.onspeechend  =()=>log('onspeechend');
+  r.onaudioend   =()=>log('onaudioend');
+  r.onerror=(e)=>{
     log('onerror: '+e.error+(e.message?' — '+e.message:''));
-
-    if(e.error === 'not-allowed'){
-      showAlert('Mic blocked. Allow microphone access in Chrome.');
-      stopRec();
-      return;
-    }
-    if(e.error === 'network'){
-      setStatus('err','Network error');
-      return;
-    }
-    if(e.error === 'aborted'){
-      if(manualStop){
-        log('aborted after manual stop, ignored');
-        return;
-      }
-      scheduleRestart('aborted');
-      return;
-    }
-    if(e.error === 'no-speech'){
-      scheduleRestart('no-speech');
-      return;
-    }
-    setStatus('err', e.error);
+    if(e.error==='not-allowed'){ showAlert('Mic blocked. Tap the lock icon in Chrome → Microphone → Allow.'); stopRec(); return; }
+    if(e.error==='network'){ setStatus('err','Network error'); return; }
+    if(e.error==='no-speech'||e.error==='aborted'){ scheduleRestart(); return; }
+    setStatus('err',e.error);
   };
-
-  r.onresult = (e) => {
+  r.onresult=(e)=>{
     log('onresult ✓ '+e.results.length+' result(s)');
-    let fin = '', itr = '';
-
-    for(let i=e.resultIndex; i<e.results.length; i++){
-      const res = e.results[i];
-      const txt = res[0].transcript || '';
-      const conf = res[0].confidence || 0;
+    let fin='', itr='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i], txt=res[0].transcript, conf=res[0].confidence;
       log((res.isFinal?'FINAL':'interim')+': "'+txt.trim()+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
-
       if(res.isFinal){
-        fin += txt;
-        txt.trim().split(/\s+/).filter(Boolean).forEach(w => {
-          wordList.push({raw:w, word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')});
-        });
-        if(conf > 0){
-          clarScores.push(conf);
-          updateClarityAvg();
-        }
-      }else{
-        itr += txt;
-      }
+        fin+=txt;
+        txt.trim().split(/\s+/).filter(Boolean).forEach(w=>
+          wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
+        );
+        if(conf>0){ clarScores.push(conf); updateClarity(conf); }
+      } else { itr+=txt; }
     }
-
-    if(fin.trim()) txFinal += (txFinal ? ' ' : '') + fin.trim();
-    txInterim = itr.trim();
-    renderTx();
-    updateWordCount();
-    runCompare();
+    if(fin) txFinal+=(txFinal?' ':'')+fin.trim();
+    renderTx(itr); updateWordCount(); runCompare();
   };
-
-  r.onend = () => {
-    log('onend — isRec='+isRec+' manualStop='+manualStop);
-    if(manualStop){
-      setStatus('','Stopped');
-      manualStop = false;
-      return;
-    }
-    if(isRec) scheduleRestart('onend');
+  r.onend=()=>{
+    log('onend — isRec='+isRec);
+    if(isRec) scheduleRestart();
     else setStatus('','Stopped');
   };
-
   return r;
 }
 
-function scheduleRestart(reason){
-  if(!isRec || restartInFlight) return;
-  restartInFlight = true;
+function scheduleRestart(){
+  if(!isRec) return;
   setStatus('wait','Restarting...');
   clearTimeout(restartTimer);
-  log('scheduleRestart: '+reason);
-
-  restartTimer = setTimeout(() => {
-    if(!isRec){
-      restartInFlight = false;
-      return;
-    }
-    try{
-      rec = buildRec();
-      rec.start();
-      sessCount++;
-      log('Restarted #'+sessCount);
-    }catch(e){
-      restartInFlight = false;
-      log('Restart err: '+e.message);
-      setStatus('err','Restart failed');
-    }
-  }, RESTART_DELAY_MS);
-}
-
-function startVolMeter(){
-  if(!ENABLE_VOLUME_METER){
-    log('Volume meter disabled for this device profile');
-    return;
-  }
-  clearTimeout(volDelayTimer);
-  volDelayTimer = setTimeout(async () => {
+  restartTimer=setTimeout(()=>{
     if(!isRec) return;
     try{
-      volStream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
-      volCtx = new (window.AudioContext || window.webkitAudioContext)();
+      rec=buildRec(); rec.start();
+      sessCount++;
+      document.getElementById('sessCnt') && (document.getElementById('sessCnt').textContent=sessCount);
+      log('Restarted #'+sessCount);
+    } catch(e){ log('Restart err: '+e.message); setStatus('err','Restart failed'); }
+  },300);
+}
+
+// ── Volume meter ─────────────────────────────────────────────────────────
+// Starts 200ms after SR — just enough for SR to claim the mic first.
+// Uses a separate getUserMedia stream; does not share with SR.
+function startVolMeter(){
+  clearTimeout(volDelayTimer);
+  volDelayTimer = setTimeout(async ()=>{
+    if(!isRec) return;
+    try{
+      volStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+      volCtx = new(window.AudioContext||window.webkitAudioContext)();
       volAnalyser = volCtx.createAnalyser();
       volAnalyser.fftSize = 512;
       volCtx.createMediaStreamSource(volStream).connect(volAnalyser);
       document.getElementById('waveWrap').style.display='block';
-      drawWave();
-      volLoop();
+      drawWave(); volLoop();
       log('Volume meter ✓');
-    }catch(e){
-      log('Volume meter err: '+e.message);
-      document.getElementById('volVal').textContent='ERR';
-    }
-  }, 250);
+    } catch(e){ log('Volume meter err: '+e.message); }
+  }, 200);
 }
 
 function stopVolMeter(){
   clearTimeout(volDelayTimer);
-  if(volAnimId){ cancelAnimationFrame(volAnimId); volAnimId = null; }
+  if(volAnimId){ cancelAnimationFrame(volAnimId); volAnimId=null; }
   clearTimeout(volTimer);
-  if(volStream){ volStream.getTracks().forEach(t => t.stop()); volStream = null; }
-  if(volCtx){ volCtx.close(); volCtx = null; volAnalyser = null; }
-
-  if(ENABLE_VOLUME_METER){
-    document.getElementById('waveWrap').style.display='none';
-    document.getElementById('volVal').textContent='—';
-    document.getElementById('volBar').style.width='0%';
-  }else{
-    document.getElementById('volVal').textContent='OFF';
-    document.getElementById('volBar').style.width='0%';
-  }
+  if(volStream){ volStream.getTracks().forEach(t=>t.stop()); volStream=null; }
+  if(volCtx){ volCtx.close(); volCtx=null; volAnalyser=null; }
+  document.getElementById('waveWrap').style.display='none';
+  document.getElementById('volVal').textContent='—';
+  document.getElementById('volBar').style.width='0%';
 }
 
 function volLoop(){
-  if(!volAnalyser || !isRec) return;
-  const buf = new Uint8Array(volAnalyser.frequencyBinCount);
+  if(!volAnalyser||!isRec) return;
+  const buf=new Uint8Array(volAnalyser.frequencyBinCount);
   volAnalyser.getByteFrequencyData(buf);
-  const avg = buf.reduce((a,b)=>a+b,0)/buf.length;
-  const db = avg>1 ? Math.round(20*Math.log10(avg/255)) : -60;
-  const pct = Math.round(Math.max(0, Math.min(100, (avg/255)*100)));
-  document.getElementById('volVal').textContent = db;
-  document.getElementById('volBar').style.width = pct+'%';
-  document.getElementById('volBar').style.background = pct>65?'#E24B4A':pct>30?'#EF9F27':'#1D9E75';
-  volTimer = setTimeout(volLoop,100);
+  const avg=buf.reduce((a,b)=>a+b,0)/buf.length;
+  const db=avg>1 ? Math.round(20*Math.log10(avg/255)) : -60;
+  const pct=Math.round(Math.max(0,Math.min(100,(avg/255)*100)));
+  document.getElementById('volVal').textContent=db;
+  document.getElementById('volBar').style.width=pct+'%';
+  document.getElementById('volBar').style.background=pct>65?'#E24B4A':pct>30?'#EF9F27':'#1D9E75';
+  volTimer=setTimeout(volLoop,100);
 }
 
 function drawWave(){
-  const cv = document.getElementById('waveCanvas');
-  cv.width = cv.offsetWidth || 400;
-  cv.height = cv.offsetHeight || 56;
-  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-
+  const cv=document.getElementById('waveCanvas');
+  cv.width=cv.offsetWidth||400; cv.height=cv.offsetHeight||56;
+  const ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
   function frame(){
-    if(!volAnalyser) return;
-    volAnimId = requestAnimationFrame(frame);
-    const buf = new Uint8Array(volAnalyser.fftSize);
+    if(!volAnalyser){ return; }
+    volAnimId=requestAnimationFrame(frame);
+    const buf=new Uint8Array(volAnalyser.fftSize);
     volAnalyser.getByteTimeDomainData(buf);
     ctx.clearRect(0,0,W,H);
-    ctx.strokeStyle = '#378ADD';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    const step = W / buf.length;
-    let x = 0;
+    ctx.strokeStyle='#378ADD'; ctx.lineWidth=1.5; ctx.beginPath();
+    const step=W/buf.length; let x=0;
     for(let i=0;i<buf.length;i++){
-      const y = ((buf[i]/128)-1)*(H/2)+(H/2);
-      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      x += step;
+      const y=((buf[i]/128)-1)*(H/2)+(H/2);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=step;
     }
     ctx.stroke();
   }
   frame();
 }
 
-async function toggleRec(){
-  if(isRec) stopRec();
-  else await startRec();
-}
+// ── Start / Stop ─────────────────────────────────────────────────────────
+async function toggleRec(){ if(isRec) stopRec(); else await startRec(); }
 
 async function startRec(){
-  hideAlert();
   log('=== START ===');
-  if(!SR){
-    showAlert('SpeechRecognition not available.');
-    return;
-  }
+  if(!SR){ showAlert('SpeechRecognition not available.'); return; }
+  isRec=true; sessCount=1;
 
-  isRec = true;
-  sessCount = 1;
-  manualStop = false;
-  restartInFlight = false;
-  clearTimeout(restartTimer);
+  // Step 1: SpeechRecognition starts FIRST — owns the mic
+  rec=buildRec();
+  if(!rec){ isRec=false; return; }
+  try{ rec.start(); log('rec.start() called'); }
+  catch(e){ log('rec.start() err: '+e.message); isRec=false; return; }
 
-  rec = buildRec();
-  if(!rec){
-    isRec = false;
-    return;
-  }
+  const btn=document.getElementById('recBtn');
+  btn.textContent='⬛  Stop listening'; btn.classList.add('on');
 
-  try{
-    rec.start();
-    log('rec.start() called');
-  }catch(e){
-    log('rec.start() err: '+e.message);
-    isRec = false;
-    setStatus('err','Start failed');
-    return;
-  }
-
-  const btn = document.getElementById('recBtn');
-  btn.textContent = '⬛  Stop listening';
-  btn.classList.add('on');
-
+  // Step 2: Volume meter starts 200ms later on its own stream
   startVolMeter();
 }
 
 function stopRec(){
   log('=== STOP ===');
-  isRec = false;
-  manualStop = true;
-  restartInFlight = false;
+  isRec=false;
   clearTimeout(restartTimer);
-
-  if(rec){
-    try{ rec.abort(); }catch(e){}
-    rec = null;
-  }
+  if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
   stopVolMeter();
-
-  const btn = document.getElementById('recBtn');
-  btn.textContent = '● Start listening';
-  btn.classList.remove('on');
+  const btn=document.getElementById('recBtn');
+  btn.textContent='● Start listening'; btn.classList.remove('on');
   setStatus('','Stopped');
 }
 
-function renderTx(){
-  const box = document.getElementById('txBox');
-  const ref = document.getElementById('refInput').value.trim();
-
-  if(!txFinal && !txInterim){
-    box.innerHTML = '<span style="color:#aaa;font-size:14px">Start speaking...</span>';
-    return;
-  }
-
-  let html = ref ? colorize(txFinal, ref) : esc(txFinal);
-  if(txInterim) html += ' <span class="interim">'+esc(txInterim)+'</span>';
-  box.innerHTML = html;
-  box.scrollTop = box.scrollHeight;
-
-  const avg = clarScores.length ? clarScores.reduce((a,b)=>a+b,0)/clarScores.length : 0;
-  document.getElementById('txBadges').innerHTML = avg>0
-    ? `<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span><span class="badge bi">${wordList.length} words</span>`
-    : '';
+// ── Render ───────────────────────────────────────────────────────────────
+function renderTx(interim){
+  const box=document.getElementById('txBox'), ref=document.getElementById('refInput').value.trim();
+  if(!txFinal&&!interim){ box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>'; return; }
+  let html=ref?colorize(txFinal,ref):esc(txFinal);
+  if(interim) html+=' <span class="interim">'+esc(interim)+'</span>';
+  box.innerHTML=html; box.scrollTop=box.scrollHeight;
+  const avg=clarScores.length?clarScores.reduce((a,b)=>a+b,0)/clarScores.length:0;
+  document.getElementById('txBadges').innerHTML=avg>0
+    ?`<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span><span class="badge bi">${wordList.length} words</span>`:'';
 }
-
-function colorize(spoken, ref){
-  const rw = norm(ref).split(/\s+/).filter(Boolean);
-  return spoken.trim().split(/\s+/).filter(Boolean).map(w => {
-    const c = norm(w);
-    if(rw.includes(c)) return `<span class="word-match">${esc(w)}</span>`;
-    if(rw.some(r => r.length>3 && (r.startsWith(c.slice(0,3)) || c.startsWith(r.slice(0,3))))) return `<span class="word-partial">${esc(w)}</span>`;
-    return `<span class="word-miss">${esc(w)}</span>`;
+function colorize(spoken,ref){
+  const rw=norm(ref).split(/\s+/).filter(Boolean);
+  return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{
+    const c=norm(w);
+    if(rw.includes(c)) return`<span class="word-match">${esc(w)}</span>`;
+    if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
+    return`<span class="word-miss">${esc(w)}</span>`;
   }).join(' ');
 }
-
 function runCompare(){
-  const ref = document.getElementById('refInput').value.trim();
-  if(!ref || !txFinal){
-    document.getElementById('cmpCard').style.display='none';
-    return;
-  }
+  const ref=document.getElementById('refInput').value.trim();
+  if(!ref||!txFinal){ document.getElementById('cmpCard').style.display='none'; return; }
   document.getElementById('cmpCard').style.display='block';
-  const rw = norm(ref).split(/\s+/).filter(Boolean), sw = norm(txFinal).split(/\s+/).filter(Boolean);
-  document.getElementById('cmpBox').innerHTML = rw.map(w => {
-    if(sw.includes(w)) return `<span class="word-match">${esc(w)}</span>`;
-    if(sw.some(s => s.length>3 && (s.startsWith(w.slice(0,3)) || w.startsWith(s.slice(0,3))))) return `<span class="word-partial">${esc(w)}</span>`;
-    return `<span class="word-miss">${esc(w)}</span>`;
+  const rw=norm(ref).split(/\s+/).filter(Boolean), sw=norm(txFinal).split(/\s+/).filter(Boolean);
+  document.getElementById('cmpBox').innerHTML=rw.map(w=>{
+    if(sw.includes(w)) return`<span class="word-match">${esc(w)}</span>`;
+    if(sw.some(s=>s.length>3&&(s.startsWith(w.slice(0,3))||w.startsWith(s.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
+    return`<span class="word-miss">${esc(w)}</span>`;
   }).join(' ');
-  const matched = rw.filter(w => sw.includes(w)).length;
-  const pct = rw.length ? Math.round(matched/rw.length*100) : 0;
-  document.getElementById('cmpBadges').innerHTML =
+  const matched=rw.filter(w=>sw.includes(w)).length, pct=Math.round(matched/rw.length*100);
+  document.getElementById('cmpBadges').innerHTML=
     `<span class="badge ${pct>=80?'bg':pct>=50?'bw':'bb'}">Match ${pct}%</span><span class="badge bi">${matched}/${rw.length} matched</span><span class="badge bb">${rw.length-matched} missing</span>`;
 }
-
-function updateClarityAvg(){
-  if(!clarScores.length){
-    document.getElementById('clarVal').textContent='—';
-    document.getElementById('clarBar').style.width='0%';
-    return;
-  }
-  const avg = clarScores.reduce((a,b)=>a+b,0)/clarScores.length;
-  const p = Math.round(avg*100);
-  document.getElementById('clarVal').textContent = p;
-  document.getElementById('clarBar').style.width = p+'%';
-  document.getElementById('clarBar').style.background = p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A';
-}
-
-function updateWordCount(){
-  document.getElementById('wordCnt').textContent = wordList.length;
-}
+function updateClarity(c){ const p=Math.round(c*100); document.getElementById('clarVal').textContent=p; document.getElementById('clarBar').style.width=p+'%'; document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A'; }
+function updateWordCount(){ document.getElementById('wordCnt').textContent=wordList.length; }
 function clearAll(){
-  txFinal = '';
-  txInterim = '';
-  clarScores = [];
-  wordList = [];
-  renderTx();
-  updateWordCount();
-  updateClarityAvg();
+  txFinal=''; clarScores=[]; wordList=[];
+  renderTx(''); updateWordCount();
+  document.getElementById('clarVal').textContent='—';
+  document.getElementById('clarBar').style.width='0%';
   document.getElementById('cmpCard').style.display='none';
   log('Cleared.');
 }
 function loadTxt(e){
-  const f = e.target.files[0];
-  if(!f) return;
-  const fr = new FileReader();
-  fr.onload = ev => {
-    document.getElementById('refInput').value = ev.target.result.trim();
-    runCompare();
-    renderTx();
-    log('File: '+f.name);
-  };
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); log('File: '+f.name); };
   fr.readAsText(f);
 }
-document.getElementById('refInput').addEventListener('input', () => {
-  renderTx();
-  runCompare();
-});
-document.getElementById('langSel').addEventListener('change', () => {
-  log('Language changed to '+document.getElementById('langSel').value);
-  if(isRec){
-    stopRec();
-    setTimeout(() => startRec(), 500);
-  }
-});
-
-function norm(s){ return (s||'').toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim(); }
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+document.getElementById('refInput').addEventListener('input',()=>{ renderTx(''); runCompare(); });
+function norm(s){ return s.toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim(); }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
 </html>
