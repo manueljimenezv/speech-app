@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Speech Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem;}
+h1{font-size:20px;font-weight:500;margin-bottom:3px;}
+.sub{font-size:13px;color:#666;margin-bottom:1.25rem;}
+.card{background:#fff;border:1px solid #e0dfda;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:.9rem;}
+.section-title{font-size:13px;font-weight:500;margin-bottom:9px;}
+.debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:130px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;}
+.btn{font-size:14px;padding:10px 22px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a18;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.btn:active{background:#f0efe8;}
+.btn.on{border-color:#E24B4A;color:#E24B4A;}
+.btn-sm{font-size:13px;padding:8px 14px;border-radius:8px;border:1px solid #ddd;background:none;color:#666;cursor:pointer;}
+select{font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a18;max-width:160px;}
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.9rem;}
+.metric{background:#f5f4f0;border-radius:8px;padding:.65rem .8rem;}
+.metric-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:5px;}
+.metric-val{font-size:22px;font-weight:500;line-height:1;}
+.metric-unit{font-size:11px;color:#888;}
+.bar-wrap{height:7px;background:#e0dfda;border-radius:4px;margin-top:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .1s,background .3s;}
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border-radius:20px;background:#f5f4f0;color:#666;border:1px solid #e0dfda;}
+.dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;}
+.dot.green{background:#1D9E75;animation:pulse 1.2s infinite;}
+.dot.red{background:#E24B4A;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.canvas-wrap{height:54px;background:#f5f4f0;border-radius:8px;overflow:hidden;margin-bottom:.9rem;}
+canvas{width:100%;height:100%;display:block;}
+.tx-box{min-height:130px;max-height:260px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.7rem .9rem;font-size:15px;line-height:1.9;}
+.interim{color:#aaa;font-style:italic;}
+.word-match{background:#C0DD97;color:#27500A;border-radius:3px;padding:1px 3px;}
+.word-miss{background:#F7C1C1;color:#791F1F;border-radius:3px;padding:1px 3px;}
+.word-partial{background:#FAC775;color:#633806;border-radius:3px;padding:1px 3px;}
+.badge{font-size:12px;padding:3px 10px;border-radius:6px;display:inline-block;margin:2px;}
+.bg{background:#C0DD97;color:#27500A;}.bw{background:#FAC775;color:#633806;}.bb{background:#F7C1C1;color:#791F1F;}.bi{background:#B5D4F4;color:#0C447C;}
+.tab-row{display:flex;border-bottom:1px solid #e0dfda;margin-bottom:.9rem;overflow-x:auto;}
+.tab{font-size:13px;padding:8px 14px 11px;cursor:pointer;color:#888;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:500;}
+.panel{display:none;}.panel.active{display:block;}
+textarea{width:100%;min-height:90px;resize:vertical;font-size:14px;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;font-family:system-ui,sans-serif;line-height:1.6;}
+textarea:focus{outline:none;border-color:#888;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.legend-item{font-size:11px;display:flex;align-items:center;gap:4px;}
+.swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
+</style>
+</head>
+<body>
+
+<h1>Speech Analyzer</h1>
+<p class="sub">Transcription · Volume · Clarity · Reference compare</p>
+
+<div class="card">
+  <div class="section-title">System check</div>
+  <div class="debug-box" id="debugBox"></div>
+</div>
+
+<div class="tab-row">
+  <button class="tab active" onclick="switchTab('main')">Transcribe</button>
+  <button class="tab" onclick="switchTab('compare')">Reference & compare</button>
+</div>
+
+<div class="panel active" id="panel-main">
+  <div class="card">
+    <div class="row">
+      <select id="langSel">
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="es-ES">Spanish (ES)</option>
+        <option value="es-MX">Spanish (MX)</option>
+        <option value="fr-FR">French</option>
+        <option value="de-DE">German</option>
+        <option value="pt-BR">Portuguese (BR)</option>
+        <option value="it-IT">Italian</option>
+        <option value="ja-JP">Japanese</option>
+        <option value="zh-CN">Chinese</option>
+      </select>
+      <button class="btn" id="recBtn" onclick="toggleRec()">&#9679; Start</button>
+      <button class="btn-sm" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="row" style="margin-bottom:.9rem;">
+      <span class="status-pill"><span class="dot" id="dotEl"></span><span id="statusLbl">Idle</span></span>
+    </div>
+    <div class="canvas-wrap"><canvas id="waveCanvas"></canvas></div>
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-label">Volume</div>
+        <div><span class="metric-val" id="volVal">—</span><span class="metric-unit"> dB</span></div>
+        <div class="bar-wrap"><div class="bar-fill" id="volBar" style="width:0%;background:#1D9E75"></div></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Clarity</div>
+        <div><span class="metric-val" id="clarVal">—</span><span class="metric-unit"> %</span></div>
+        <div class="bar-wrap"><div class="bar-fill" id="clarBar" style="width:0%;background:#378ADD"></div></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Words</div>
+        <div class="metric-val" id="wordCnt">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">Transcript</div>
+    <div class="tx-box" id="txBox"><span style="color:#aaa;font-size:14px">Press Start to begin...</span></div>
+    <div style="margin-top:10px;" id="txBadges"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-compare">
+  <div class="card">
+    <div class="section-title">Reference text</div>
+    <textarea id="refInput" placeholder="Type or paste the text the speaker should say. Words will be highlighted in real time."></textarea>
+    <div style="margin-top:10px;">
+      <label style="font-size:13px;color:#666;">Upload .txt: </label>
+      <input type="file" accept=".txt" id="fileUp" onchange="loadTxt(event)" style="font-size:13px;color:#666;">
+    </div>
+  </div>
+  <div class="card" id="cmpCard" style="display:none;">
+    <div class="section-title">Word-by-word comparison</div>
+    <div class="tx-box" id="cmpBox"></div>
+    <div class="legend">
+      <span class="legend-item"><span class="swatch" style="background:#C0DD97"></span>Matched</span>
+      <span class="legend-item"><span class="swatch" style="background:#FAC775"></span>Partial</span>
+      <span class="legend-item"><span class="swatch" style="background:#F7C1C1"></span>Not said</span>
+    </div>
+    <div style="margin-top:10px;" id="cmpBadges"></div>
+  </div>
+</div>
+
+<script>
+const log=(...a)=>{const b=document.getElementById('debugBox');b.textContent+='['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';b.scrollTop=b.scrollHeight;};
+
+(function(){
+  log('UA: '+navigator.userAgent.slice(-60));
+  log('Protocol: '+location.protocol);
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND'));
+  if(!SR)log('ACTION: Use Chrome on Android (not Firefox/Samsung Browser)');
+  if(location.protocol!=='https:'&&location.hostname!=='localhost')
+    log('WARNING: Not HTTPS — mic will be blocked on Android');
+  navigator.permissions&&navigator.permissions.query({name:'microphone'}).then(r=>log('Mic permission: '+r.state)).catch(()=>log('Mic permission: could not query'));
+  log('Ready.');
+})();
+
+let rec=null,isRec=false,txFinal='',clarScores=[],wordList=[];
+let audioCtx,analyser,micStream,animId;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['main','compare'][i]===id));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+function setStatus(state,msg){
+  document.getElementById('dotEl').className='dot'+(state==='on'?' green':state==='err'?' red':'');
+  document.getElementById('statusLbl').textContent=msg;
+}
+function buildRec(){
+  if(!SR){log('ERROR: SpeechRecognition not available');return null;}
+  const r=new SR();
+  r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
+  r.lang=document.getElementById('langSel').value;
+  log('Recognition built. lang='+r.lang);
+  r.onstart=()=>{log('onstart ✓ mic active');setStatus('on','Listening');};
+  r.onsoundstart=()=>log('Sound detected');
+  r.onspeechstart=()=>log('Speech detected');
+  r.onspeechend=()=>log('Speech ended');
+  r.onerror=(e)=>{
+    log('ERROR: '+e.error+(e.message?' — '+e.message:''));
+    if(e.error==='not-allowed')log('ACTION: Tap Allow when Chrome asks for microphone');
+    if(e.error==='network')log('ACTION: Check internet connection');
+    if(e.error!=='no-speech')setStatus('err',e.error);
+  };
+  r.onend=()=>{
+    log('onend. isRec='+isRec);
+    if(isRec){try{r.start();log('Auto-restarted');}catch(e){log('Restart err: '+e.message);}}
+    else setStatus('','Stopped');
+  };
+  r.onresult=(e)=>{
+    let fin='',itr='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i],txt=res[0].transcript,conf=res[0].confidence;
+      if(res.isFinal){
+        fin+=txt;
+        txt.trim().split(/\s+/).filter(Boolean).forEach(w=>wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')}));
+        if(conf>0){clarScores.push(conf);updateClarity(conf);}
+        log('Final: "'+txt.trim()+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
+      } else itr+=txt;
+    }
+    if(fin)txFinal+=(txFinal?' ':'')+fin.trim();
+    renderTx(itr);updateWordCount();runCompare();
+  };
+  return r;
+}
+function renderTx(interim){
+  const box=document.getElementById('txBox'),ref=document.getElementById('refInput').value.trim();
+  if(!txFinal&&!interim){box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>';return;}
+  let html=ref?colorize(txFinal,ref):esc(txFinal);
+  if(interim)html+=' <span class="interim">'+esc(interim)+'</span>';
+  box.innerHTML=html;box.scrollTop=box.scrollHeight;
+  const avg=clarScores.length?clarScores.reduce((a,b)=>a+b,0)/clarScores.length:0;
+  document.getElementById('txBadges').innerHTML=avg>0
+    ?`<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span><span class="badge bi">${wordList.length} words</span>`:'';
+}
+function colorize(spoken,ref){
+  const rw=norm(ref).split(/\s+/).filter(Boolean);
+  return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{
+    const c=norm(w);
+    if(rw.includes(c))return`<span class="word-match">${esc(w)}</span>`;
+    if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3)))))return`<span class="word-partial">${esc(w)}</span>`;
+    return`<span class="word-miss">${esc(w)}</span>`;
+  }).join(' ');
+}
+function runCompare(){
+  const ref=document.getElementById('refInput').value.trim();
+  if(!ref||!txFinal){document.getElementById('cmpCard').style.display='none';return;}
+  document.getElementById('cmpCard').style.display='block';
+  const rw=norm(ref).split(/\s+/).filter(Boolean),sw=norm(txFinal).split(/\s+/).filter(Boolean);
+  document.getElementById('cmpBox').innerHTML=rw.map(w=>{
+    if(sw.includes(w))return`<span class="word-match">${esc(w)}</span>`;
+    if(sw.some(s=>s.length>3&&(s.startsWith(w.slice(0,3))||w.startsWith(s.slice(0,3)))))return`<span class="word-partial">${esc(w)}</span>`;
+    return`<span class="word-miss">${esc(w)}</span>`;
+  }).join(' ');
+  const matched=rw.filter(w=>sw.includes(w)).length,pct=Math.round(matched/rw.length*100);
+  document.getElementById('cmpBadges').innerHTML=
+    `<span class="badge ${pct>=80?'bg':pct>=50?'bw':'bb'}">Match ${pct}%</span><span class="badge bi">${matched}/${rw.length} matched</span><span class="badge bb">${rw.length-matched} missing</span>`;
+}
+function updateClarity(c){const p=Math.round(c*100);document.getElementById('clarVal').textContent=p;document.getElementById('clarBar').style.width=p+'%';document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A';}
+function updateWordCount(){document.getElementById('wordCnt').textContent=wordList.length;}
+async function toggleRec(){if(isRec)stopRec();else await startRec();}
+async function startRec(){
+  log('Requesting mic...');
+  try{micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});log('Mic granted ✓');}
+  catch(e){log('Mic DENIED: '+e.name+' — '+e.message);setStatus('err','Mic blocked');return;}
+  try{
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    analyser=audioCtx.createAnalyser();analyser.fftSize=512;
+    audioCtx.createMediaStreamSource(micStream).connect(analyser);
+    drawWave();volLoop();log('Audio analyser ✓');
+  }catch(e){log('Audio err: '+e.message);}
+  rec=buildRec();if(!rec)return;
+  try{rec.start();}catch(e){log('rec.start() err: '+e.message);return;}
+  isRec=true;
+  document.getElementById('recBtn').textContent='⬛ Stop';
+  document.getElementById('recBtn').classList.add('on');
+}
+function stopRec(){
+  isRec=false;
+  if(rec){try{rec.stop();}catch(e){}rec=null;}
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+  if(audioCtx){audioCtx.close();audioCtx=null;analyser=null;}
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  document.getElementById('recBtn').textContent='● Start';
+  document.getElementById('recBtn').classList.remove('on');
+  setStatus('','Stopped');
+  document.getElementById('volVal').textContent='—';
+  document.getElementById('volBar').style.width='0%';
+  clearWave();log('Stopped.');
+}
+function volLoop(){
+  if(!analyser||!isRec)return;
+  const buf=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(buf);
+  const avg=buf.reduce((a,b)=>a+b,0)/buf.length;
+  const db=avg>1?Math.round(20*Math.log10(avg/255)):-60;
+  const pct=Math.round(Math.max(0,Math.min(100,(avg/255)*100)));
+  document.getElementById('volVal').textContent=db;
+  document.getElementById('volBar').style.width=pct+'%';
+  document.getElementById('volBar').style.background=pct>65?'#E24B4A':pct>30?'#EF9F27':'#1D9E75';
+  setTimeout(volLoop,100);
+}
+function drawWave(){
+  const cv=document.getElementById('waveCanvas'),W=cv.offsetWidth||400,H=cv.offsetHeight||54;
+  cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  function frame(){
+    if(!analyser)return;
+    animId=requestAnimationFrame(frame);
+    const buf=new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buf);
+    ctx.clearRect(0,0,W,H);ctx.strokeStyle='#378ADD';ctx.lineWidth=1.5;ctx.beginPath();
+    const step=W/buf.length;let x=0;
+    for(let i=0;i<buf.length;i++){const y=((buf[i]/128)-1)*(H/2)+(H/2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);x+=step;}
+    ctx.stroke();
+  }
+  frame();
+}
+function clearWave(){const cv=document.getElementById('waveCanvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}
+function clearAll(){
+  txFinal='';clarScores=[];wordList=[];renderTx('');
+  document.getElementById('wordCnt').textContent='0';
+  document.getElementById('clarVal').textContent='—';
+  document.getElementById('clarBar').style.width='0%';
+  document.getElementById('cmpCard').style.display='none';
+  log('Cleared.');
+}
+function loadTxt(e){
+  const f=e.target.files[0];if(!f)return;
+  const fr=new FileReader();
+  fr.onload=ev=>{document.getElementById('refInput').value=ev.target.result.trim();runCompare();log('File: '+f.name);};
+  fr.readAsText(f);
+}
+document.getElementById('refInput').addEventListener('input',()=>{renderTx('');runCompare();});
+function norm(s){return s.toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim();}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
