@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Speech Analyzer</title>
+<title>Speech Analyzer v1</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:system-ui,sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem;}
 h1{font-size:20px;font-weight:500;margin-bottom:3px;}
 .sub{font-size:13px;color:#666;margin-bottom:1.25rem;}
+.ver{font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;}
 .card{background:#fff;border:1px solid #e0dfda;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:.9rem;}
 .stitle{font-size:13px;font-weight:500;margin-bottom:9px;}
 .debug-box{background:#f5f4f0;border-radius:8px;padding:.6rem .9rem;font-size:11px;font-family:monospace;color:#555;min-height:60px;max-height:200px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;}
@@ -41,8 +42,9 @@ select{font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;b
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 .canvas-wrap{height:56px;background:#f5f4f0;border-radius:8px;overflow:hidden;margin-bottom:.9rem;}
 canvas{width:100%;height:100%;display:block;}
-.tx-box{min-height:160px;max-height:360px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2;}
+.tx-box{min-height:160px;max-height:360px;overflow-y:auto;background:#f5f4f0;border-radius:8px;padding:.8rem 1rem;font-size:16px;line-height:2.1;}
 .interim{color:#999;font-style:italic;}
+.rescued{color:#aaa;font-style:italic;text-decoration:underline dotted;}
 .word-match{background:#C0DD97;color:#27500A;border-radius:3px;padding:1px 4px;}
 .word-miss{background:#F7C1C1;color:#791F1F;border-radius:3px;padding:1px 4px;}
 .word-partial{background:#FAC775;color:#633806;border-radius:3px;padding:1px 4px;}
@@ -61,7 +63,7 @@ textarea:focus{outline:none;border-color:#888;}
 </style>
 </head>
 <body>
-<h1>Speech Analyzer</h1>
+<h1>Speech Analyzer <span class="ver">v1</span></h1>
 <p class="sub">Transcription · Volume · Clarity · Reference compare</p>
 <div class="alert" id="alertBox"></div>
 
@@ -138,7 +140,7 @@ textarea:focus{outline:none;border-color:#888;}
 <div class="panel" id="panel-compare">
   <div class="card">
     <div class="stitle">Reference text</div>
-    <textarea id="refInput" placeholder="Type or paste the text the speaker should say."></textarea>
+    <textarea id="refInput" placeholder="Paste the expected text here. Words spoken will be highlighted in real time."></textarea>
     <div style="margin-top:10px;">
       <label style="font-size:13px;color:#666;">Upload .txt: </label>
       <input type="file" accept=".txt" id="fileUp" onchange="loadTxt(event)" style="font-size:13px;color:#666;">
@@ -193,6 +195,7 @@ textarea:focus{outline:none;border-color:#888;}
 </div>
 
 <script>
+// ── Logging ───────────────────────────────────────────────────────────────
 const log = (...a) => {
   const b = document.getElementById('debugBox');
   b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';
@@ -201,7 +204,7 @@ const log = (...a) => {
 function showAlert(m){ const a=document.getElementById('alertBox'); a.textContent=m; a.style.display='block'; }
 
 (function(){
-  log('Protocol: '+location.protocol+' Host: '+location.host);
+  log('v1 | Protocol: '+location.protocol+' Host: '+location.host);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND ✗'));
   if(!SR) showAlert('Use Google Chrome.');
@@ -211,16 +214,17 @@ function showAlert(m){ const a=document.getElementById('alertBox'); a.textConten
 
 const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
 
-// ── Persistent transcript — ONLY cleared by clearAll() ───────────────────
-let txFinal    = '';
+// ── Persistent state — ONLY cleared by clearAll() ─────────────────────────
+let txFinal    = '';   // committed text that never changes
 let clarScores = [];
 let wordList   = [];
 
-// ── SR state ─────────────────────────────────────────────────────────────
-let rec        = null;
-let isRec      = false;
-let sessCount  = 0;
-let watchdog   = null;   // kills & restarts if SR goes silent too long
+// ── SR state ──────────────────────────────────────────────────────────────
+let rec           = null;
+let isRec         = false;
+let sessCount     = 0;
+let watchdog      = null;
+let lastInterim   = '';  // safety buffer: last interim before engine dies
 
 // ── Settings ──────────────────────────────────────────────────────────────
 const volEnabled = () => document.getElementById('toggleVol').checked;
@@ -241,104 +245,131 @@ function setStatus(state,msg){
   document.getElementById('statusLbl').textContent=msg;
 }
 
-// ── Core SR engine ────────────────────────────────────────────────────────
-// Strategy: continuous=true so Chrome sends results without cutting mid-sentence.
-// Watchdog timer restarts the engine if no audio event fires within 6 seconds
-// (handles the Android "silent death" bug).
+// ── Commit a text chunk into txFinal ──────────────────────────────────────
+function commit(text, rescued){
+  const t = text.trim();
+  if(!t) return;
+  txFinal += (txFinal?' ':'')+t;
+  t.split(/\s+/).filter(Boolean).forEach(w=>
+    wordList.push({raw:w, word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
+  );
+  updateWordCount();
+  if(rescued) log('RESCUED interim: "'+t+'"');
+}
+
+// ── Launch one SR engine instance ─────────────────────────────────────────
 function launchEngine(){
   if(!SR || !isRec) return;
-
-  // Clear any previous watchdog
   clearTimeout(watchdog);
+  lastInterim = '';
 
-  try { if(rec) rec.abort(); } catch(e){}
-  rec = new SR();
-  rec.continuous      = true;   // <-- KEY: don't cut mid-sentence
-  rec.interimResults  = true;
-  rec.maxAlternatives = 1;
-  rec.lang = document.getElementById('langSel').value;
+  // Abort previous engine cleanly
+  if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
 
-  // Watchdog: if no audio event in 6s, restart engine
-  function resetWatchdog(){
-    clearTimeout(watchdog);
-    watchdog = setTimeout(()=>{
-      if(!isRec) return;
-      log('Watchdog timeout → restarting engine');
-      sessCount++;
-      document.getElementById('sessCnt').textContent = sessCount;
-      launchEngine();
-    }, 6000);
-  }
+  setTimeout(()=>{
+    if(!isRec) return;
 
-  rec.onstart       = () => { log('Engine #'+sessCount+' started'); setStatus('on','Listening...'); resetWatchdog(); };
-  rec.onaudiostart  = () => { resetWatchdog(); };
-  rec.onsoundstart  = () => { setStatus('on','Sound...'); resetWatchdog(); };
-  rec.onspeechstart = () => { setStatus('on','Transcribing...'); resetWatchdog(); };
-  rec.onspeechend   = () => { resetWatchdog(); };
-  rec.onaudioend    = () => { resetWatchdog(); };
+    rec = new SR();
+    rec.continuous      = true;
+    rec.interimResults  = true;
+    rec.maxAlternatives = 1;
+    rec.lang = document.getElementById('langSel').value;
 
-  rec.onerror = (e) => {
-    log('onerror: '+e.error);
-    if(e.error==='not-allowed'){
-      showAlert('Mic blocked. Tap the lock icon → Microphone → Allow.');
-      isRec=false; stopRec(); return;
-    }
-    if(e.error==='network'){ setStatus('err','Network error'); return; }
-    if(e.error==='aborted') return; // we triggered this ourselves, ignore
-    // Any other error: let watchdog or onend handle restart
-  };
-
-  rec.onresult = (e) => {
-    resetWatchdog();
-    let newFinal = '';
-    let interim  = '';
-    for(let i=e.resultIndex; i<e.results.length; i++){
-      const res  = e.results[i];
-      const txt  = res[0].transcript;
-      const conf = res[0].confidence;
-      if(res.isFinal){
-        const trimmed = txt.trim();
-        if(trimmed){
-          log('FINAL: "'+trimmed+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
-          newFinal += (newFinal?' ':'')+trimmed;
-          trimmed.split(/\s+/).filter(Boolean).forEach(w=>
-            wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
-          );
-          if(conf>0){ clarScores.push(conf); updateClarity(conf); }
-        }
-      } else {
-        interim += txt;
-      }
-    }
-    // Accumulate — never replace
-    if(newFinal) txFinal += (txFinal?' ':'')+newFinal;
-    renderTx(interimOn()?interim:'');
-    updateWordCount();
-    runCompare();
-  };
-
-  rec.onend = (e) => {
-    log('onend #'+sessCount+(isRec?' → restart':' → stopped'));
-    clearTimeout(watchdog);
-    if(isRec){
-      // Short delay then relaunch
-      setTimeout(()=>{
+    // Watchdog: if no result event for 7s, assume engine died silently → restart
+    function kick(){
+      clearTimeout(watchdog);
+      watchdog = setTimeout(()=>{
         if(!isRec) return;
+        log('Watchdog fired — engine silent, restarting');
+        // Rescue any buffered interim before restarting
+        if(lastInterim.trim()){
+          commit(lastInterim, true);
+          lastInterim='';
+          renderTx('');
+          runCompare();
+        }
+        sessCount++;
+        document.getElementById('sessCnt').textContent=sessCount;
+        launchEngine();
+      }, 7000);
+    }
+
+    rec.onstart       = () => { log('Engine #'+sessCount+' started'); setStatus('on','Listening...'); kick(); };
+    rec.onaudiostart  = () => kick();
+    rec.onsoundstart  = () => { setStatus('on','Sound...'); kick(); };
+    rec.onspeechstart = () => { setStatus('on','Transcribing...'); kick(); };
+    rec.onspeechend   = () => kick();
+    rec.onaudioend    = () => kick();
+
+    rec.onerror = (e) => {
+      log('onerror: '+e.error);
+      if(e.error==='not-allowed'){
+        showAlert('Mic blocked. Tap the lock icon → Microphone → Allow.');
+        isRec=false; stopRec(); return;
+      }
+      if(e.error==='network'){ setStatus('err','Network error'); return; }
+      if(e.error==='aborted') return; // we triggered this, ignore
+    };
+
+    rec.onresult = (e) => {
+      kick(); // reset watchdog on every result
+      let newFinal = '';
+      let interim  = '';
+
+      for(let i=e.resultIndex; i<e.results.length; i++){
+        const res  = e.results[i];
+        const txt  = res[0].transcript;
+        const conf = res[0].confidence;
+
+        if(res.isFinal){
+          const t = txt.trim();
+          if(t){
+            log('FINAL: "'+t+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
+            newFinal += (newFinal?' ':'')+t;
+            if(conf>0) clarScores.push(conf);
+          }
+          lastInterim = ''; // final received — clear buffer
+        } else {
+          interim += txt;
+          lastInterim = txt; // keep last interim as safety buffer
+        }
+      }
+
+      if(newFinal){
+        commit(newFinal, false);
+        // Update clarity after committing
+        const last = clarScores[clarScores.length-1];
+        if(last) updateClarity(last);
+      }
+
+      renderTx(interimOn() ? interim : '');
+      runCompare();
+    };
+
+    rec.onend = () => {
+      clearTimeout(watchdog);
+      log('onend #'+sessCount+(isRec?' → restart':' → stopped'));
+
+      if(isRec){
+        // Rescue any interim that was buffered when engine ended unexpectedly
+        if(lastInterim.trim()){
+          commit(lastInterim, true);
+          lastInterim = '';
+          renderTx('');
+          runCompare();
+        }
         sessCount++;
         document.getElementById('sessCnt').textContent = sessCount;
         launchEngine();
-      }, 200);
-    } else {
-      setStatus('','Stopped');
-    }
-  };
+      } else {
+        setStatus('','Stopped');
+      }
+    };
 
-  try {
-    rec.start();
-  } catch(e){
-    log('rec.start() err: '+e.message);
-    setStatus('err','SR error');
-  }
+    try{ rec.start(); }
+    catch(e){ log('rec.start() err: '+e.message); setStatus('err','SR error'); }
+
+  }, 150); // small delay between restarts
 }
 
 // ── Start / Stop ──────────────────────────────────────────────────────────
@@ -359,36 +390,42 @@ function stopRec(){
   log('=== STOP ===');
   isRec=false;
   clearTimeout(watchdog);
+  // Rescue any remaining interim before stopping
+  if(lastInterim.trim()){
+    commit(lastInterim, true);
+    lastInterim='';
+  }
   if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
   stopVolMeter();
   document.getElementById('recBtn').textContent='● Start listening';
   document.getElementById('recBtn').classList.remove('on');
   setStatus('','Stopped');
-  // txFinal and wordList intentionally preserved
+  renderTx('');
+  runCompare();
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
 function renderTx(interim){
-  const box=document.getElementById('txBox');
-  const ref=document.getElementById('refInput').value.trim();
-  if(!txFinal&&!interim){
+  const box = document.getElementById('txBox');
+  const ref = document.getElementById('refInput').value.trim();
+  if(!txFinal && !interim){
     box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>';
     return;
   }
-  let html=ref?colorize(txFinal,ref):esc(txFinal);
-  if(interim) html+=' <span class="interim">'+esc(interim)+'</span>';
-  box.innerHTML=html;
-  box.scrollTop=box.scrollHeight;
-  const avg=clarScores.length?clarScores.reduce((a,b)=>a+b,0)/clarScores.length:0;
-  document.getElementById('txBadges').innerHTML=avg>0
-    ?`<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span>`
-    +`<span class="badge bi">${wordList.length} words</span>`:'';
+  let html = ref ? colorize(txFinal, ref) : esc(txFinal);
+  if(interim) html += ' <span class="interim">'+esc(interim)+'</span>';
+  box.innerHTML = html;
+  box.scrollTop = box.scrollHeight;
+  const avg = clarScores.length ? clarScores.reduce((a,b)=>a+b,0)/clarScores.length : 0;
+  document.getElementById('txBadges').innerHTML = avg>0
+    ? `<span class="badge ${avg>.75?'bg':avg>.5?'bw':'bb'}">Avg clarity ${Math.round(avg*100)}%</span>`
+    + `<span class="badge bi">${wordList.length} words</span>` : '';
 }
 
-function colorize(spoken,ref){
-  const rw=norm(ref).split(/\s+/).filter(Boolean);
+function colorize(spoken, ref){
+  const rw = norm(ref).split(/\s+/).filter(Boolean);
   return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{
-    const c=norm(w);
+    const c = norm(w);
     if(rw.includes(c)) return`<span class="word-match">${esc(w)}</span>`;
     if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3)))))
       return`<span class="word-partial">${esc(w)}</span>`;
@@ -397,7 +434,7 @@ function colorize(spoken,ref){
 }
 
 function runCompare(){
-  const ref=document.getElementById('refInput').value.trim();
+  const ref = document.getElementById('refInput').value.trim();
   if(!ref||!txFinal){document.getElementById('cmpCard').style.display='none';return;}
   document.getElementById('cmpCard').style.display='block';
   const rw=norm(ref).split(/\s+/).filter(Boolean);
@@ -425,7 +462,8 @@ function updateClarity(c){
 function updateWordCount(){ document.getElementById('wordCnt').textContent=wordList.length; }
 
 function clearAll(){
-  txFinal=''; clarScores=[]; wordList=[]; peakDb=-90; dbSamples=[]; sessCount=0;
+  txFinal=''; clarScores=[]; wordList=[]; lastInterim='';
+  peakDb=-90; dbSamples=[]; sessCount=0;
   renderTx(''); updateWordCount();
   document.getElementById('clarVal').textContent='—';
   document.getElementById('clarBar').style.width='0%';
