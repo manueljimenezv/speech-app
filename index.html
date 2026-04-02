@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Speech Analyzer v2</title>
+<title>Speech Analyzer v3</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:system-ui,sans-serif;background:#f5f4f0;color:#1a1a18;padding:1rem;}
@@ -16,11 +16,14 @@ h1{font-size:20px;font-weight:500;margin-bottom:3px;}
 .btn-big{font-size:16px;padding:14px 0;border-radius:10px;border:2px solid #1D9E75;background:#1D9E75;color:#fff;cursor:pointer;font-weight:500;width:100%;margin-bottom:8px;-webkit-tap-highlight-color:transparent;}
 .btn-big:active{background:#0F6E56;}
 .btn-big.on{background:#E24B4A;border-color:#E24B4A;}
-.btn-sm{font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem 0;border-top:1px solid #f0efe8;margin-top:.25rem;}
+.btn-sm{font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.btn-sm:hover{background:#f5f4f0;}
+.btn-blue{font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid #B5D4F4;background:#E6F1FB;color:#185FA5;cursor:pointer;}
+.btn-blue:hover{background:#B5D4F4;}
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;padding:.65rem 0;border-top:1px solid #f0efe8;margin-top:.25rem;}
 .toggle-label{font-size:13px;color:#444;font-weight:500;}
-.toggle-desc{font-size:11px;color:#999;margin-top:2px;}
-.switch{position:relative;width:44px;height:24px;flex-shrink:0;margin-left:12px;}
+.toggle-desc{font-size:11px;color:#999;margin-top:2px;max-width:260px;}
+.switch{position:relative;width:44px;height:24px;flex-shrink:0;margin-left:12px;margin-top:2px;}
 .switch input{opacity:0;width:0;height:0;}
 .slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:12px;transition:.2s;}
 .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
@@ -39,6 +42,7 @@ select{font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;b
 .dot.green{background:#1D9E75;animation:pulse 1s infinite;}
 .dot.red{background:#E24B4A;}
 .dot.yellow{background:#EF9F27;animation:pulse 1s infinite;}
+.dot.blue{background:#378ADD;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 .canvas-wrap{height:56px;background:#f5f4f0;border-radius:8px;overflow:hidden;margin-bottom:.9rem;}
 canvas{width:100%;height:100%;display:block;}
@@ -53,26 +57,41 @@ canvas{width:100%;height:100%;display:block;}
 .tab{font-size:13px;padding:8px 14px 11px;cursor:pointer;color:#888;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
 .tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:500;}
 .panel{display:none;}.panel.active{display:block;}
-textarea{width:100%;min-height:100px;resize:vertical;font-size:14px;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;font-family:system-ui,sans-serif;line-height:1.6;}
+textarea{width:100%;min-height:90px;resize:vertical;font-size:14px;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff;font-family:system-ui,sans-serif;line-height:1.6;}
 textarea:focus{outline:none;border-color:#888;}
 .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
 .legend-item{font-size:11px;display:flex;align-items:center;gap:4px;}
 .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
 .alert{background:#FFF3CD;border:1px solid #FAC775;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#633806;margin-bottom:.9rem;display:none;}
+.upload-zone{border:2px dashed #e0dfda;border-radius:10px;padding:1.25rem;text-align:center;margin-bottom:.75rem;background:#fafaf8;cursor:pointer;transition:border-color .2s;}
+.upload-zone:hover{border-color:#aaa;}
+.upload-zone p{font-size:13px;color:#888;margin-top:6px;}
+.upload-zone input[type=file]{display:none;}
+.file-label{font-size:13px;color:#185FA5;cursor:pointer;text-decoration:underline;}
+.audio-player{background:#f5f4f0;border-radius:10px;padding:.75rem 1rem;margin-bottom:.9rem;}
+.audio-player audio{width:100%;margin-top:6px;}
+.audio-player p{font-size:12px;color:#888;margin-bottom:4px;}
+.ref-source-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;}
+.ai-status{font-size:12px;color:#185FA5;padding:6px 10px;background:#E6F1FB;border-radius:8px;margin-top:6px;display:none;}
+.spinner{display:inline-block;width:10px;height:10px;border:2px solid #B5D4F4;border-top-color:#185FA5;border-radius:50%;animation:spin .6s linear infinite;margin-right:5px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+input[type=file].hidden{display:none;}
 </style>
 </head>
 <body>
-<h1>Speech Analyzer <span class="ver">v2</span></h1>
+<h1>Speech Analyzer <span class="ver">v3</span></h1>
 <p class="sub">Transcription · Volume · Clarity · Reference compare</p>
 <div class="alert" id="alertBox"></div>
 
 <div class="tab-row">
   <button class="tab active" onclick="switchTab('main')">Transcribe</button>
+  <button class="tab" onclick="switchTab('audio')">Audio file</button>
   <button class="tab" onclick="switchTab('compare')">Reference</button>
   <button class="tab" onclick="switchTab('settings')">Settings</button>
   <button class="tab" onclick="switchTab('debug')">Debug</button>
 </div>
 
+<!-- TRANSCRIBE TAB -->
 <div class="panel active" id="panel-main">
   <div class="card">
     <select id="langSel">
@@ -95,38 +114,16 @@ textarea:focus{outline:none;border-color:#888;}
   <div id="volSection" style="display:none;">
     <div class="canvas-wrap"><canvas id="waveCanvas"></canvas></div>
     <div class="m3">
-      <div class="metric">
-        <div class="mlabel">Volume</div>
-        <div><span class="mval" id="volVal">—</span><span class="munit"> dB</span></div>
-        <div class="bar-wrap"><div class="bar-fill" id="volBar" style="width:0%;background:#1D9E75"></div></div>
-      </div>
-      <div class="metric">
-        <div class="mlabel">Peak dB</div>
-        <div><span class="mval" id="peakVal">—</span></div>
-        <div class="bar-wrap"><div class="bar-fill" id="peakBar" style="width:0%;background:#378ADD"></div></div>
-      </div>
-      <div class="metric">
-        <div class="mlabel">Avg dB</div>
-        <div><span class="mval" id="avgVolVal">—</span></div>
-        <div class="bar-wrap"><div class="bar-fill" id="avgVolBar" style="width:0%;background:#9FE1CB"></div></div>
-      </div>
+      <div class="metric"><div class="mlabel">Volume</div><div><span class="mval" id="volVal">—</span><span class="munit"> dB</span></div><div class="bar-wrap"><div class="bar-fill" id="volBar" style="width:0%;background:#1D9E75"></div></div></div>
+      <div class="metric"><div class="mlabel">Peak dB</div><div><span class="mval" id="peakVal">—</span></div><div class="bar-wrap"><div class="bar-fill" id="peakBar" style="width:0%;background:#378ADD"></div></div></div>
+      <div class="metric"><div class="mlabel">Avg dB</div><div><span class="mval" id="avgVolVal">—</span></div><div class="bar-wrap"><div class="bar-fill" id="avgVolBar" style="width:0%;background:#9FE1CB"></div></div></div>
     </div>
   </div>
 
   <div class="m3">
-    <div class="metric">
-      <div class="mlabel">Clarity</div>
-      <div><span class="mval" id="clarVal">—</span><span class="munit"> %</span></div>
-      <div class="bar-wrap"><div class="bar-fill" id="clarBar" style="width:0%;background:#378ADD"></div></div>
-    </div>
-    <div class="metric">
-      <div class="mlabel">Words</div>
-      <div class="mval" id="wordCnt">0</div>
-    </div>
-    <div class="metric">
-      <div class="mlabel">Restarts</div>
-      <div class="mval" id="sessCnt">0</div>
-    </div>
+    <div class="metric"><div class="mlabel">Clarity</div><div><span class="mval" id="clarVal">—</span><span class="munit"> %</span></div><div class="bar-wrap"><div class="bar-fill" id="clarBar" style="width:0%;background:#378ADD"></div></div></div>
+    <div class="metric"><div class="mlabel">Words</div><div class="mval" id="wordCnt">0</div></div>
+    <div class="metric"><div class="mlabel">Restarts</div><div class="mval" id="sessCnt">0</div></div>
   </div>
 
   <div class="card">
@@ -136,15 +133,54 @@ textarea:focus{outline:none;border-color:#888;}
   </div>
 </div>
 
-<div class="panel" id="panel-compare">
+<!-- AUDIO FILE TAB -->
+<div class="panel" id="panel-audio">
   <div class="card">
-    <div class="stitle">Reference text</div>
-    <textarea id="refInput" placeholder="Paste the expected text here. Words will be highlighted as the speaker says them."></textarea>
-    <div style="margin-top:10px;">
-      <label style="font-size:13px;color:#666;">Upload .txt: </label>
-      <input type="file" accept=".txt" id="fileUp" onchange="loadTxt(event)" style="font-size:13px;color:#666;">
+    <div class="stitle">Upload audio file</div>
+    <div class="upload-zone" id="audioZone" onclick="document.getElementById('audioFileInput').click()">
+      <div style="font-size:28px;">🎵</div>
+      <p>Tap to upload MP3, WAV, M4A, OGG, WebM</p>
+      <p style="font-size:11px;margin-top:4px;">File is played back and analyzed through the Speech Analyzer</p>
+      <input type="file" id="audioFileInput" accept="audio/*" onchange="loadAudioFile(event)">
+    </div>
+    <div id="audioPlayerWrap" style="display:none;">
+      <div class="audio-player">
+        <p id="audioFileName">No file loaded</p>
+        <audio id="audioPlayer" controls></audio>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-big" id="analyzeBtn" onclick="analyzeAudio()" style="flex:1;margin-bottom:0;">&#9654;&nbsp; Play &amp; analyze</button>
+        <button class="btn-sm" onclick="stopAudioAnalysis()">Stop</button>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:8px;">The audio will play through your device speaker. Make sure volume is up — the Speech API listens via microphone.</p>
     </div>
   </div>
+  <div class="card" style="background:#FFF3CD;border-color:#FAC775;">
+    <p style="font-size:13px;color:#633806;line-height:1.6;"><strong>How it works:</strong> The audio plays through your speaker while the mic listens and transcribes. For best results: use headphones or play near the microphone, and make sure the room is quiet.</p>
+  </div>
+</div>
+
+<!-- REFERENCE TAB -->
+<div class="panel" id="panel-compare">
+  <div class="card">
+    <div class="stitle">Reference text source</div>
+    <div class="ref-source-row">
+      <button class="btn-sm" onclick="showRefInput('text')">✏️ Type / paste</button>
+      <button class="btn-sm" onclick="document.getElementById('refTxtFile').click()">📄 Upload .txt</button>
+      <button class="btn-sm" onclick="document.getElementById('refPdfFile').click()">📑 Upload PDF</button>
+      <button class="btn-sm" onclick="document.getElementById('refDocFile').click()">📝 Upload .docx</button>
+    </div>
+    <input type="file" id="refTxtFile"  accept=".txt"        class="hidden" onchange="loadRefTxt(event)">
+    <input type="file" id="refPdfFile"  accept=".pdf"        class="hidden" onchange="loadRefPdf(event)">
+    <input type="file" id="refDocFile"  accept=".doc,.docx"  class="hidden" onchange="loadRefDoc(event)">
+
+    <div id="aiStatus" class="ai-status"><span class="spinner"></span><span id="aiStatusMsg">Extracting script with AI...</span></div>
+
+    <div id="refTextWrap">
+      <textarea id="refInput" placeholder="Type or paste the expected text here. Words will be highlighted as the speaker says them.&#10;&#10;You can also upload a .txt, PDF, or .docx file — if it contains a test procedure or instructions, AI will extract only the readable script portion."></textarea>
+    </div>
+  </div>
+
   <div class="card" id="cmpCard" style="display:none;">
     <div class="stitle">Word-by-word comparison</div>
     <div class="tx-box" id="cmpBox"></div>
@@ -157,20 +193,21 @@ textarea:focus{outline:none;border-color:#888;}
   </div>
 </div>
 
+<!-- SETTINGS TAB -->
 <div class="panel" id="panel-settings">
   <div class="card">
     <div class="stitle">Audio settings</div>
     <div class="toggle-row">
       <div>
         <div class="toggle-label">Volume meter &amp; waveform</div>
-        <div class="toggle-desc">Shows dB and waveform. Disable if transcription stops working.</div>
+        <div class="toggle-desc">Shows real-time dB level and waveform. Disabled by default — enable only if needed, as a second mic stream may occasionally interfere with transcription.</div>
       </div>
-      <label class="switch"><input type="checkbox" id="toggleVol" checked onchange="onVolToggle()"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="toggleVol" onchange="onVolToggle()"><span class="slider"></span></label>
     </div>
     <div class="toggle-row">
       <div>
         <div class="toggle-label">Show words while speaking</div>
-        <div class="toggle-desc">Preview words in real time before finalized.</div>
+        <div class="toggle-desc">Preview interim words in real time before they are finalized.</div>
       </div>
       <label class="switch"><input type="checkbox" id="toggleInterim" checked><span class="slider"></span></label>
     </div>
@@ -178,13 +215,14 @@ textarea:focus{outline:none;border-color:#888;}
   <div class="card">
     <div class="stitle">How dB works</div>
     <p style="font-size:13px;color:#555;line-height:1.7;">
-      Volume is <strong>RMS dBFS</strong>.<br>
+      Volume is <strong>RMS dBFS</strong> (decibels relative to full scale).<br>
       <strong>0 dB</strong> = maximum · <strong>−60 dB</strong> = silence.<br>
       Normal speech ≈ <strong>−30 to −10 dB</strong>. Louder = higher number.
     </p>
   </div>
 </div>
 
+<!-- DEBUG TAB -->
 <div class="panel" id="panel-debug">
   <div class="card">
     <div class="stitle">Debug log</div>
@@ -194,6 +232,7 @@ textarea:focus{outline:none;border-color:#888;}
 </div>
 
 <script>
+// ── Logging ───────────────────────────────────────────────────────────────
 const log = (...a) => {
   const b = document.getElementById('debugBox');
   b.textContent += '['+new Date().toLocaleTimeString()+'] '+a.join(' ')+'\n';
@@ -202,7 +241,7 @@ const log = (...a) => {
 function showAlert(m){ const a=document.getElementById('alertBox'); a.textContent=m; a.style.display='block'; }
 
 (function(){
-  log('v2 | '+location.host);
+  log('v3 | '+location.host);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   log('SpeechRecognition: '+(SR?'AVAILABLE ✓':'NOT FOUND ✗'));
   if(!SR) showAlert('Use Google Chrome.');
@@ -212,201 +251,234 @@ function showAlert(m){ const a=document.getElementById('alertBox'); a.textConten
 
 const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
 
-// ── Persistent transcript — ONLY cleared by clearAll() ────────────────────
-let txFinal    = '';
-let clarScores = [];
-let wordList   = [];
-let lastInterim= '';
+// ── Persistent transcript ─────────────────────────────────────────────────
+let txFinal='', clarScores=[], wordList=[], lastInterim='';
 
 // ── SR engine state ───────────────────────────────────────────────────────
-let rec         = null;
-let isRec       = false;
-let sessCount   = 0;
-let watchdog    = null;
-let restartScheduled = false;  // THE key flag — only ONE restart allowed at a time
+let rec=null, isRec=false, sessCount=0, watchdog=null, restartScheduled=false;
 
 // ── Settings ──────────────────────────────────────────────────────────────
 const volEnabled = () => document.getElementById('toggleVol').checked;
 const interimOn  = () => document.getElementById('toggleInterim').checked;
+
 function onVolToggle(){
   if(!volEnabled() && isRec) stopVolMeter();
   if(volEnabled()  && isRec) startVolMeter();
 }
+
+function showRefInput(){ document.getElementById('refTextWrap').style.display='block'; }
+
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>
-    t.classList.toggle('active',['main','compare','settings','debug'][i]===id));
+    t.classList.toggle('active',['main','audio','compare','settings','debug'][i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
 }
 function setStatus(state,msg){
-  document.getElementById('dotEl').className=
-    'dot'+(state==='on'?' green':state==='err'?' red':state==='wait'?' yellow':'');
+  document.getElementById('dotEl').className='dot'+(state==='on'?' green':state==='err'?' red':state==='wait'?' yellow':state==='blue'?' blue':'');
   document.getElementById('statusLbl').textContent=msg;
 }
 
-// ── Commit text into txFinal (append only) ────────────────────────────────
+// ── Commit text ───────────────────────────────────────────────────────────
 function commit(text, tag){
-  const t = text.trim();
-  if(!t) return false;
-  txFinal += (txFinal?' ':'')+t;
-  t.split(/\s+/).filter(Boolean).forEach(w=>
-    wordList.push({raw:w, word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')})
-  );
+  const t=text.trim(); if(!t) return;
+  txFinal+=(txFinal?' ':'')+t;
+  t.split(/\s+/).filter(Boolean).forEach(w=>wordList.push({raw:w,word:w.toLowerCase().replace(/[^\wáéíóúüñ]/gi,'')}));
   updateWordCount();
   if(tag) log(tag+': "'+t+'"');
-  return true;
 }
 
-// ── Schedule exactly ONE restart, ignore all duplicates ──────────────────
-function scheduleRestart(delayMs){
-  if(!isRec) return;
-  if(restartScheduled) return;          // already queued — drop this call
-  restartScheduled = true;
+// ── One restart at a time ─────────────────────────────────────────────────
+function scheduleRestart(ms){
+  if(!isRec||restartScheduled) return;
+  restartScheduled=true;
   setStatus('wait','Restarting...');
-  setTimeout(()=>{
-    restartScheduled = false;           // release lock before launching
-    if(!isRec) return;
-    sessCount++;
-    document.getElementById('sessCnt').textContent = sessCount;
-    launchEngine();
-  }, delayMs || 400);
+  setTimeout(()=>{ restartScheduled=false; if(!isRec) return; sessCount++; document.getElementById('sessCnt').textContent=sessCount; launchEngine(); }, ms||400);
 }
 
-// ── Launch one SR engine ───────────────────────────────────────────────────
+// ── Launch SR engine ──────────────────────────────────────────────────────
 function launchEngine(){
-  if(!SR || !isRec) return;
-  clearTimeout(watchdog);
-  lastInterim = '';
-
-  // Nullify old rec WITHOUT calling abort() — abort triggers onerror+onend
-  // which would call scheduleRestart again.  Just drop the reference.
-  rec = null;
-
-  const engine = new SR();
-  engine.continuous      = true;
-  engine.interimResults  = true;
-  engine.maxAlternatives = 1;
-  engine.lang = document.getElementById('langSel').value;
-
-  // Watchdog: if no onresult for 8s, engine has gone silent → restart
-  function kick(){
-    clearTimeout(watchdog);
-    watchdog = setTimeout(()=>{
-      if(!isRec) return;
-      log('Watchdog → silent restart');
-      if(lastInterim.trim()){
-        commit(lastInterim, 'RESCUED');
-        lastInterim='';
-        renderTx(''); runCompare();
-      }
-      // Stop current engine by dropping ref — do NOT call abort()
-      rec = null;
-      scheduleRestart(0);
-    }, 8000);
-  }
-
-  engine.onstart       = () => { log('Engine #'+sessCount); setStatus('on','Listening...'); kick(); };
-  engine.onaudiostart  = () => kick();
-  engine.onsoundstart  = () => { setStatus('on','Sound...'); kick(); };
-  engine.onspeechstart = () => { setStatus('on','Transcribing...'); kick(); };
-  engine.onspeechend   = () => kick();
-  engine.onaudioend    = () => kick();
-
-  engine.onerror = (e) => {
-    // Only log errors that matter; ignore aborted (from our own stop)
-    if(e.error === 'not-allowed'){
-      showAlert('Mic blocked. Tap the lock icon → Microphone → Allow.');
-      isRec=false; stopRec(); return;
-    }
-    if(e.error === 'network'){ log('Network error'); setStatus('err','Network error'); return; }
-    if(e.error === 'aborted') return;   // we caused this — silently ignore
-    log('onerror: '+e.error);
-  };
-
-  engine.onresult = (e) => {
+  if(!SR||!isRec) return;
+  clearTimeout(watchdog); lastInterim=''; rec=null;
+  const engine=new SR();
+  engine.continuous=true; engine.interimResults=true; engine.maxAlternatives=1;
+  engine.lang=document.getElementById('langSel').value;
+  function kick(){ clearTimeout(watchdog); watchdog=setTimeout(()=>{ if(!isRec) return; log('Watchdog→restart'); if(lastInterim.trim()){ commit(lastInterim,'RESCUED'); lastInterim=''; renderTx(''); runCompare(); } rec=null; scheduleRestart(0); },8000); }
+  engine.onstart      =()=>{ log('Engine #'+sessCount); setStatus('on','Listening...'); kick(); };
+  engine.onaudiostart =()=>kick();
+  engine.onsoundstart =()=>{ setStatus('on','Sound...'); kick(); };
+  engine.onspeechstart=()=>{ setStatus('on','Transcribing...'); kick(); };
+  engine.onspeechend  =()=>kick();
+  engine.onaudioend   =()=>kick();
+  engine.onerror=(e)=>{ if(e.error==='not-allowed'){ showAlert('Mic blocked.'); isRec=false; stopRec(); return; } if(e.error==='network'){ setStatus('err','Network error'); return; } if(e.error==='aborted') return; log('onerror: '+e.error); };
+  engine.onresult=(e)=>{
     kick();
-    let newFinal = '';
-    let interim  = '';
-    for(let i=e.resultIndex; i<e.results.length; i++){
-      const res=e.results[i], txt=res[0].transcript, conf=res[0].confidence;
-      if(res.isFinal){
-        const t=txt.trim();
-        if(t){
-          log('FINAL: "'+t+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a'));
-          newFinal += (newFinal?' ':'')+t;
-          if(conf>0) clarScores.push(conf);
-        }
-        lastInterim='';
-      } else {
-        interim += txt;
-        lastInterim = txt;
-      }
+    let nf='',itr='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i],txt=res[0].transcript,conf=res[0].confidence;
+      if(res.isFinal){ const t=txt.trim(); if(t){ log('FINAL: "'+t+'" conf='+(conf>0?Math.round(conf*100)+'%':'n/a')); nf+=(nf?' ':'')+t; if(conf>0) clarScores.push(conf); } lastInterim=''; }
+      else { itr+=txt; lastInterim=txt; }
     }
-    if(newFinal){
-      commit(newFinal, null);
-      if(clarScores.length) updateClarity(clarScores[clarScores.length-1]);
-    }
-    renderTx(interimOn()?interim:'');
-    runCompare();
+    if(nf){ commit(nf,null); if(clarScores.length) updateClarity(clarScores[clarScores.length-1]); }
+    renderTx(interimOn()?itr:''); runCompare();
   };
-
-  engine.onend = (e) => {
-    clearTimeout(watchdog);
-    if(!isRec){ setStatus('','Stopped'); return; }
-    // Only restart if this engine is still the active one
-    if(rec !== engine) return;   // already superseded — do nothing
-    log('onend → restart');
-    if(lastInterim.trim()){
-      commit(lastInterim, 'RESCUED');
-      lastInterim='';
-      renderTx(''); runCompare();
-    }
-    scheduleRestart(300);
-  };
-
-  rec = engine;
-  try{ engine.start(); }
-  catch(e){ log('start err: '+e.message); setStatus('err','SR error'); }
+  engine.onend=()=>{ clearTimeout(watchdog); if(!isRec){ setStatus('','Stopped'); return; } if(rec!==engine) return; log('onend→restart'); if(lastInterim.trim()){ commit(lastInterim,'RESCUED'); lastInterim=''; renderTx(''); runCompare(); } scheduleRestart(300); };
+  rec=engine;
+  try{ engine.start(); } catch(e){ log('start err: '+e.message); setStatus('err','SR error'); }
 }
 
 // ── Start / Stop ──────────────────────────────────────────────────────────
 function toggleRec(){ if(isRec) stopRec(); else startRec(); }
-
 function startRec(){
   if(!SR){ showAlert('SpeechRecognition not available.'); return; }
-  log('=== START ===');
-  isRec=true; sessCount=0; restartScheduled=false;
+  log('=== START ==='); isRec=true; sessCount=0; restartScheduled=false;
   document.getElementById('sessCnt').textContent='0';
   document.getElementById('recBtn').textContent='⬛  Stop listening';
   document.getElementById('recBtn').classList.add('on');
   launchEngine();
   if(volEnabled()) startVolMeter();
 }
-
 function stopRec(){
-  log('=== STOP ===');
-  isRec=false;
-  restartScheduled=false;
-  clearTimeout(watchdog);
-  // Rescue any remaining interim
+  log('=== STOP ==='); isRec=false; restartScheduled=false; clearTimeout(watchdog);
   if(lastInterim.trim()){ commit(lastInterim,'RESCUED'); lastInterim=''; }
-  // Abort cleanly — onerror aborted is ignored, onend sees isRec=false
   if(rec){ try{ rec.abort(); }catch(e){} rec=null; }
   stopVolMeter();
   document.getElementById('recBtn').textContent='● Start listening';
   document.getElementById('recBtn').classList.remove('on');
-  setStatus('','Stopped');
-  renderTx(''); runCompare();
+  setStatus('','Stopped'); renderTx(''); runCompare();
+}
+
+// ── Audio file analysis ───────────────────────────────────────────────────
+let audioAnalyzing=false;
+function loadAudioFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const url=URL.createObjectURL(f);
+  document.getElementById('audioPlayer').src=url;
+  document.getElementById('audioFileName').textContent=f.name+' ('+Math.round(f.size/1024)+'KB)';
+  document.getElementById('audioPlayerWrap').style.display='block';
+  log('Audio file loaded: '+f.name);
+}
+function analyzeAudio(){
+  const player=document.getElementById('audioPlayer');
+  if(!player.src){ showAlert('No audio file loaded.'); return; }
+  if(isRec) stopRec();
+  player.currentTime=0;
+  player.play();
+  setStatus('blue','Analyzing audio...');
+  startRec();
+  player.onended=()=>{ setTimeout(()=>{ stopRec(); setStatus('','Audio analysis done'); }, 1500); };
+  log('Audio analysis started');
+}
+function stopAudioAnalysis(){
+  document.getElementById('audioPlayer').pause();
+  stopRec();
+}
+
+// ── Reference: TXT upload ─────────────────────────────────────────────────
+function loadRefTxt(e){
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); log('Ref TXT: '+f.name); };
+  fr.readAsText(f);
+}
+
+// ── Reference: PDF upload → extract text → AI extract script ─────────────
+function loadRefPdf(e){
+  const f=e.target.files[0]; if(!f) return;
+  log('PDF loaded: '+f.name+' — extracting text...');
+  showAiStatus('Reading PDF...');
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    const base64=ev.target.result.split(',')[1];
+    extractScriptWithAI(base64,'pdf',f.name);
+  };
+  fr.readAsDataURL(f);
+}
+
+// ── Reference: DOCX upload → read as text → AI extract script ────────────
+function loadRefDoc(e){
+  const f=e.target.files[0]; if(!f) return;
+  log('DOCX loaded: '+f.name);
+  showAiStatus('Reading document...');
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    const base64=ev.target.result.split(',')[1];
+    extractScriptWithAI(base64,'docx',f.name);
+  };
+  fr.readAsDataURL(f);
+}
+
+// ── AI script extraction via Claude API ──────────────────────────────────
+function showAiStatus(msg){ const s=document.getElementById('aiStatus'); s.style.display='block'; document.getElementById('aiStatusMsg').textContent=msg; }
+function hideAiStatus(){ document.getElementById('aiStatus').style.display='none'; }
+
+async function extractScriptWithAI(base64data, fileType, filename){
+  log('Sending to AI for script extraction...');
+  showAiStatus('AI is extracting the readable script...');
+  try{
+    const mediaType = fileType==='pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const prompt = `You are analyzing a document that may be a test procedure, setup guide, or script for audio testing.
+
+Your task: Extract ONLY the readable spoken script — the exact words that a speaker should read aloud during the test.
+
+Rules:
+- Include only sentences or paragraphs meant to be spoken/read aloud
+- Exclude: setup instructions, equipment lists, technical parameters, headings, page numbers, footnotes, tables of settings
+- If the document contains a clearly labeled "script", "reading passage", "test text", or "playback text" — extract that verbatim
+- Output plain text only, no formatting, no bullet points, no labels
+- If you cannot find any spoken script, output: NO_SCRIPT_FOUND
+
+Document filename: ${filename}`;
+
+    let messageContent;
+    if(fileType==='pdf'){
+      messageContent=[
+        { type:'document', source:{ type:'base64', media_type:'application/pdf', data:base64data } },
+        { type:'text', text:prompt }
+      ];
+    } else {
+      // For docx, send as text extraction request
+      messageContent=[
+        { type:'text', text:prompt+'\n\nNote: This is a DOCX file encoded as base64. Extract the script from whatever text content you can identify.\n\nBase64 data (first 5000 chars): '+base64data.substring(0,5000) }
+      ];
+    }
+
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{ role:'user', content:messageContent }]
+      })
+    });
+
+    const data=await response.json();
+    const text=data.content&&data.content[0]&&data.content[0].text ? data.content[0].text.trim() : '';
+
+    if(!text || text==='NO_SCRIPT_FOUND'){
+      log('AI: no script found in document');
+      hideAiStatus();
+      showAlert('No readable script was found in the document. You can paste the text manually.');
+      return;
+    }
+
+    document.getElementById('refInput').value=text;
+    runCompare();
+    hideAiStatus();
+    log('AI extracted script: '+text.length+' chars, ~'+text.split(/\s+/).length+' words');
+
+  } catch(err){
+    log('AI extraction error: '+err.message);
+    hideAiStatus();
+    showAlert('Could not extract script automatically. Please paste the text manually.');
+  }
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
 function renderTx(interim){
-  const box=document.getElementById('txBox');
-  const ref=document.getElementById('refInput').value.trim();
-  if(!txFinal&&!interim){
-    box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>';
-    return;
-  }
+  const box=document.getElementById('txBox'), ref=document.getElementById('refInput').value.trim();
+  if(!txFinal&&!interim){ box.innerHTML='<span style="color:#aaa;font-size:14px">Start speaking...</span>'; return; }
   let html=ref?colorize(txFinal,ref):esc(txFinal);
   if(interim) html+=' <span class="interim">'+esc(interim)+'</span>';
   box.innerHTML=html; box.scrollTop=box.scrollHeight;
@@ -417,11 +489,9 @@ function renderTx(interim){
 }
 function colorize(spoken,ref){
   const rw=norm(ref).split(/\s+/).filter(Boolean);
-  return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{
-    const c=norm(w);
+  return spoken.trim().split(/\s+/).filter(Boolean).map(w=>{ const c=norm(w);
     if(rw.includes(c)) return`<span class="word-match">${esc(w)}</span>`;
-    if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3)))))
-      return`<span class="word-partial">${esc(w)}</span>`;
+    if(rw.some(r=>r.length>3&&(r.startsWith(c.slice(0,3))||c.startsWith(r.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
     return`<span class="word-miss">${esc(w)}</span>`;
   }).join(' ');
 }
@@ -429,120 +499,39 @@ function runCompare(){
   const ref=document.getElementById('refInput').value.trim();
   if(!ref||!txFinal){document.getElementById('cmpCard').style.display='none';return;}
   document.getElementById('cmpCard').style.display='block';
-  const rw=norm(ref).split(/\s+/).filter(Boolean);
-  const sw=norm(txFinal).split(/\s+/).filter(Boolean);
+  const rw=norm(ref).split(/\s+/).filter(Boolean), sw=norm(txFinal).split(/\s+/).filter(Boolean);
   document.getElementById('cmpBox').innerHTML=rw.map(w=>{
     if(sw.includes(w)) return`<span class="word-match">${esc(w)}</span>`;
-    if(sw.some(s=>s.length>3&&(s.startsWith(w.slice(0,3))||w.startsWith(s.slice(0,3)))))
-      return`<span class="word-partial">${esc(w)}</span>`;
+    if(sw.some(s=>s.length>3&&(s.startsWith(w.slice(0,3))||w.startsWith(s.slice(0,3))))) return`<span class="word-partial">${esc(w)}</span>`;
     return`<span class="word-miss">${esc(w)}</span>`;
   }).join(' ');
-  const matched=rw.filter(w=>sw.includes(w)).length;
-  const pct=Math.round(matched/rw.length*100);
+  const matched=rw.filter(w=>sw.includes(w)).length, pct=Math.round(matched/rw.length*100);
   document.getElementById('cmpBadges').innerHTML=
     `<span class="badge ${pct>=80?'bg':pct>=50?'bw':'bb'}">Match ${pct}%</span>`
    +`<span class="badge bi">${matched}/${rw.length} matched</span>`
    +`<span class="badge bb">${rw.length-matched} missing</span>`;
 }
-function updateClarity(c){
-  const p=Math.round(c*100);
-  document.getElementById('clarVal').textContent=p;
-  document.getElementById('clarBar').style.width=p+'%';
-  document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A';
-}
+function updateClarity(c){ const p=Math.round(c*100); document.getElementById('clarVal').textContent=p; document.getElementById('clarBar').style.width=p+'%'; document.getElementById('clarBar').style.background=p>75?'#1D9E75':p>50?'#EF9F27':'#E24B4A'; }
 function updateWordCount(){ document.getElementById('wordCnt').textContent=wordList.length; }
 function clearAll(){
-  txFinal=''; clarScores=[]; wordList=[]; lastInterim='';
-  peakDb=-90; dbSamples=[]; sessCount=0;
+  txFinal=''; clarScores=[]; wordList=[]; lastInterim=''; peakDb=-90; dbSamples=[]; sessCount=0;
   renderTx(''); updateWordCount();
-  document.getElementById('clarVal').textContent='—';
-  document.getElementById('clarBar').style.width='0%';
+  document.getElementById('clarVal').textContent='—'; document.getElementById('clarBar').style.width='0%';
   document.getElementById('cmpCard').style.display='none';
-  document.getElementById('peakVal').textContent='—';
-  document.getElementById('avgVolVal').textContent='—';
-  document.getElementById('sessCnt').textContent='0';
-  log('Cleared.');
+  document.getElementById('peakVal').textContent='—'; document.getElementById('avgVolVal').textContent='—';
+  document.getElementById('sessCnt').textContent='0'; log('Cleared.');
 }
-function loadTxt(e){
-  const f=e.target.files[0]; if(!f) return;
-  const fr=new FileReader();
-  fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); log('File: '+f.name); };
-  fr.readAsText(f);
-}
+function loadTxt(e){ const f=e.target.files[0]; if(!f) return; const fr=new FileReader(); fr.onload=ev=>{ document.getElementById('refInput').value=ev.target.result.trim(); runCompare(); }; fr.readAsText(f); }
 document.getElementById('refInput').addEventListener('input',()=>{ renderTx(''); runCompare(); });
 
 // ── Volume meter ──────────────────────────────────────────────────────────
 let volCtx=null,volAnalyser=null,volStream=null,volAnimId=null,volTimer=null,volDelayTimer=null;
-let peakDb=-90, dbSamples=[];
-function startVolMeter(){
-  clearTimeout(volDelayTimer);
-  volDelayTimer=setTimeout(async()=>{
-    if(!isRec||!volEnabled()) return;
-    try{
-      volStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-      volCtx=new(window.AudioContext||window.webkitAudioContext)();
-      volAnalyser=volCtx.createAnalyser(); volAnalyser.fftSize=2048;
-      volCtx.createMediaStreamSource(volStream).connect(volAnalyser);
-      peakDb=-90; dbSamples=[];
-      document.getElementById('volSection').style.display='block';
-      drawWave(); volLoop();
-      log('Volume meter ✓');
-    }catch(e){ log('Volume meter err: '+e.message); }
-  },200);
-}
-function stopVolMeter(){
-  clearTimeout(volDelayTimer);
-  if(volAnimId){ cancelAnimationFrame(volAnimId); volAnimId=null; }
-  clearTimeout(volTimer);
-  if(volStream){ volStream.getTracks().forEach(t=>t.stop()); volStream=null; }
-  if(volCtx){ volCtx.close(); volCtx=null; volAnalyser=null; }
-  document.getElementById('volSection').style.display='none';
-  document.getElementById('volVal').textContent='—';
-  document.getElementById('peakVal').textContent='—';
-  document.getElementById('avgVolVal').textContent='—';
-}
-function volLoop(){
-  if(!volAnalyser||!isRec) return;
-  const buf=new Float32Array(volAnalyser.fftSize);
-  volAnalyser.getFloatTimeDomainData(buf);
-  let sq=0; for(let i=0;i<buf.length;i++) sq+=buf[i]*buf[i];
-  const rms=Math.sqrt(sq/buf.length);
-  const db=rms>0.00001?Math.max(-60,Math.round(20*Math.log10(rms))):-60;
-  if(db>peakDb) peakDb=db;
-  dbSamples.push(db); if(dbSamples.length>60) dbSamples.shift();
-  const avg=Math.round(dbSamples.reduce((a,b)=>a+b,0)/dbSamples.length);
-  const pct=Math.round(((db+60)/60)*100);
-  const peakPct=Math.round(((peakDb+60)/60)*100);
-  const avgPct=Math.round(((avg+60)/60)*100);
-  document.getElementById('volVal').textContent=db;
-  document.getElementById('volBar').style.width=pct+'%';
-  document.getElementById('volBar').style.background=pct>80?'#E24B4A':pct>50?'#EF9F27':'#1D9E75';
-  document.getElementById('peakVal').textContent=peakDb;
-  document.getElementById('peakBar').style.width=peakPct+'%';
-  document.getElementById('avgVolVal').textContent=avg;
-  document.getElementById('avgVolBar').style.width=avgPct+'%';
-  volTimer=setTimeout(volLoop,80);
-}
-function drawWave(){
-  const cv=document.getElementById('waveCanvas');
-  cv.width=cv.offsetWidth||400; cv.height=cv.offsetHeight||56;
-  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
-  function frame(){
-    if(!volAnalyser) return;
-    volAnimId=requestAnimationFrame(frame);
-    const buf=new Float32Array(volAnalyser.fftSize);
-    volAnalyser.getFloatTimeDomainData(buf);
-    ctx.clearRect(0,0,W,H);
-    ctx.strokeStyle='#378ADD'; ctx.lineWidth=1.5; ctx.beginPath();
-    const step=W/buf.length; let x=0;
-    for(let i=0;i<buf.length;i++){
-      const y=(1-buf[i])/2*H;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=step;
-    }
-    ctx.stroke();
-  }
-  frame();
-}
+let peakDb=-90,dbSamples=[];
+function startVolMeter(){ clearTimeout(volDelayTimer); volDelayTimer=setTimeout(async()=>{ if(!isRec||!volEnabled()) return; try{ volStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}); volCtx=new(window.AudioContext||window.webkitAudioContext)(); volAnalyser=volCtx.createAnalyser(); volAnalyser.fftSize=2048; volCtx.createMediaStreamSource(volStream).connect(volAnalyser); peakDb=-90; dbSamples=[]; document.getElementById('volSection').style.display='block'; drawWave(); volLoop(); log('Volume meter ✓'); }catch(e){ log('Volume meter err: '+e.message); } },200); }
+function stopVolMeter(){ clearTimeout(volDelayTimer); if(volAnimId){cancelAnimationFrame(volAnimId);volAnimId=null;} clearTimeout(volTimer); if(volStream){volStream.getTracks().forEach(t=>t.stop());volStream=null;} if(volCtx){volCtx.close();volCtx=null;volAnalyser=null;} document.getElementById('volSection').style.display='none'; document.getElementById('volVal').textContent='—'; document.getElementById('peakVal').textContent='—'; document.getElementById('avgVolVal').textContent='—'; }
+function volLoop(){ if(!volAnalyser||!isRec) return; const buf=new Float32Array(volAnalyser.fftSize); volAnalyser.getFloatTimeDomainData(buf); let sq=0; for(let i=0;i<buf.length;i++) sq+=buf[i]*buf[i]; const rms=Math.sqrt(sq/buf.length); const db=rms>0.00001?Math.max(-60,Math.round(20*Math.log10(rms))):-60; if(db>peakDb) peakDb=db; dbSamples.push(db); if(dbSamples.length>60) dbSamples.shift(); const avg=Math.round(dbSamples.reduce((a,b)=>a+b,0)/dbSamples.length); const pct=Math.round(((db+60)/60)*100),peakPct=Math.round(((peakDb+60)/60)*100),avgPct=Math.round(((avg+60)/60)*100); document.getElementById('volVal').textContent=db; document.getElementById('volBar').style.width=pct+'%'; document.getElementById('volBar').style.background=pct>80?'#E24B4A':pct>50?'#EF9F27':'#1D9E75'; document.getElementById('peakVal').textContent=peakDb; document.getElementById('peakBar').style.width=peakPct+'%'; document.getElementById('avgVolVal').textContent=avg; document.getElementById('avgVolBar').style.width=avgPct+'%'; volTimer=setTimeout(volLoop,80); }
+function drawWave(){ const cv=document.getElementById('waveCanvas'); cv.width=cv.offsetWidth||400; cv.height=cv.offsetHeight||56; const ctx=cv.getContext('2d'),W=cv.width,H=cv.height; function frame(){ if(!volAnalyser) return; volAnimId=requestAnimationFrame(frame); const buf=new Float32Array(volAnalyser.fftSize); volAnalyser.getFloatTimeDomainData(buf); ctx.clearRect(0,0,W,H); ctx.strokeStyle='#378ADD'; ctx.lineWidth=1.5; ctx.beginPath(); const step=W/buf.length; let x=0; for(let i=0;i<buf.length;i++){ const y=(1-buf[i])/2*H; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); x+=step; } ctx.stroke(); } frame(); }
+
 function norm(s){ return s.toLowerCase().replace(/[^\wáéíóúüñ\s]/gi,'').replace(/\s+/g,' ').trim(); }
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
